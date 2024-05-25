@@ -1,10 +1,34 @@
 #content {
   margin:auto;
-  width: 20%;
+  width: 100%;
   padding: 30px;
   border: 1px solid black;
+  font-size: 18px;
 }
-button {
-  font-size: 20px;
-  font-weight: bold;
+
+code pre {
+  background: #000022;
+  color: white;
+  padding: 8px;
+}
+
+code pre .function {
+  color: cyan;
+}
+
+code pre .variable {
+  color: yellow;
+}
+
+
+code pre .keyword, .keyword-function {
+  color: violet;
+}
+
+code pre .type {
+  color: lightgreen;
+}
+
+code pre .number {
+  color: pink;
 }
