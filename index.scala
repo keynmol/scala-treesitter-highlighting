@@ -19,18 +19,46 @@ val wasmInit: String = js.native
 @js.native
 @JSImport("/tree-sitter.js", JSImport.Default)
 object Parser extends js.Any:
-  def parse(path: String): js.Any = js.native
+  def parse(path: String): Tree = js.native
+
+  def getLanguage(): Language = js.native
+
+  @js.native
+  trait Language extends js.Any:
+    def query(source: String): Query = js.native
+
+  @js.native
+  trait Query extends js.Any:
+    def matches(node: Node): A[js.Any] = js.native
+
+  @js.native
+  trait Tree extends js.Any:
+    val rootNode: Node = js.native
+
+  @js.native
+  trait Node extends js.Any
+end Parser
+
+extension [T <: js.Any](t: T) def dump() = console.log(t)
 
 // @js.native
 // @JSImport("web-tree-sitter", JSImport.Default)
 // object Parser extends js.Any:
 //   def init(opts: js.Any): js.Any = js.native
 
-//   // def init(opts: js.Any): Promise[Unit] = js.native
+//   // def in(opts: js.Any): Promise[Unit] = js.native
 
 @main def hello =
-  // ???
-  println(js.JSON.stringify(Parser.parse("object Test")))
+  println("lang")
+  
+  val lang = Parser.getLanguage()
+  val query = lang.query("(object_definition name: (identifier) @name)")
+  val tree = Parser.parse("object hello; object Test;")
+  tree.dump()
+  query.dump()
+
+  query.matches(tree.rootNode).dump()
+  // println(js.JSON.stringify(Parser.getLanguage()))
   // Parser.init(wasmInit)
   // val parser = Parser()
   // Parser.init(J()).`then`(_ => println("ok"), _ => println("nok"))
