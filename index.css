@@ -23,12 +23,27 @@ code pre .variable {
 
 code pre .keyword, .keyword-function {
   color: violet;
+  font-style: italic;
 }
 
 code pre .type {
   color: lightgreen;
 }
 
+code pre .string {
+  color: orange;
+}
+
+
 code pre .number {
   color: pink;
+}
+
+code pre .operator {
+  font-weight: bold;
+}
+
+code pre .parameter {
+ color: #e9b8f7
+
 }

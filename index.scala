@@ -148,39 +148,36 @@ end Parser
       val matches = query.captures(tree.rootNode)
 
       val switches = matches
-        .flatMap: capture =>
-          List(
-            (
-              index.resolve(capture.node.startPosition),
-              index.resolve(capture.node.endPosition),
-              capture.name.replace('.', '-')
-            )
+        .map: capture =>
+          (
+            index.resolve(capture.node.startPosition),
+            index.resolve(capture.node.endPosition),
+            capture.name.replace('.', '-')
           )
+        // .distinctBy(x => x._1)
+        .sortBy(x => x._2)
 
       val elements = List.newBuilder[HtmlElement]
 
-      // var current: String | Null = null
       var idx = 0
-      // var textLength = 0
 
-      println(index.mapping)
+      println(switches.mkString("\n"))
 
       switches
-        .distinctBy(x => (x._1, x._2))
         .foreach:
           case (start, end, what) =>
-            // if what != current then
-            val textLength = start - idx
-            if textLength != 0 then
-              elements.addOne(span(value.slice(idx, start)))
-            elements.addOne(
-              span(
-                cls := what,
-                value.slice(start, end)
+            if idx < start then
+              val textLength = start - idx
+              if textLength != 0 then
+                elements.addOne(span(value.slice(idx, start)))
+              elements.addOne(
+                span(
+                  cls := what,
+                  value.slice(start, end)
+                )
               )
-            )
-            idx = end
-      // elements.addOne(p(start, " ", end, " ", what))
+              idx = end
+            end if
 
       elements.result()
 

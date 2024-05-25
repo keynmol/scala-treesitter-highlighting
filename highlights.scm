@@ -183,7 +183,7 @@
 
 (wildcard) @parameter
 
-(annotation) @attribute
+; (annotation) @attribute
 
 ;; special keywords
 
