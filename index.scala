@@ -61,15 +61,11 @@ object Parser extends js.Any:
 
   @js.native
   trait TreeCursor extends js.Any:
-    // val name: String = js.native
-    // val node: Node = js.native
     val nodeId: Int = js.native
     val nodeText: String = js.native
 
   @js.native
   trait Point extends js.Any:
-    // val name: String = js.native
-    // val node: Node = js.native
     val row: Int = js.native
     val column: Int = js.native
 end Parser
@@ -80,11 +76,13 @@ def show(n: Parser.Node) =
 
 extension [T <: js.Any](t: T) def dump() = console.log(t)
 
+enum Switch:
+  case On(cls: String)
+  case Off(cls: String)
+
 def app(lang: Parser.Language) =
   val code = Var(
     """
-@js.native
-@JSImport("/tree-sitter.js", JSImport.Default)
 object Parser extends js.Any:
   def hello = 1
 """.trim
@@ -97,18 +95,42 @@ object Parser extends js.Any:
       onInput.mapToValue --> code,
       value <-- code
     ),
-    pre(child.text <-- code.signal.map { value =>
+    pre(children <-- code.signal.map { value =>
       val tree = Parser.parse(value)
       val index = Index(value)
       val matches = query.captures(tree.rootNode)
 
+      val switches = matches
+        .flatMap: capture =>
+          List(
+            (
+              index.resolve(capture.node.startPosition),
+              index.resolve(capture.node.endPosition),
+              capture.name
+            )
+          )
 
-      matches.toArray.toList
-        .sortBy(n => n.node.startPosition.row -> n.node.startPosition.column)
-        .map(n => (n.name, n.text, show(n.node)) -> index.resolve(n.node.startPosition))
-        .mkString("\n")
+      val elements = List.newBuilder[HtmlElement]
 
-      // js.JSON.stringify(matches, space = 4)
+      // var current: String | Null = null
+      var idx = 0
+      // var textLength = 0 
+
+      println(index.mapping)
+
+
+      switches.distinctBy(x => (x._1, x._2)).foreach:
+        case (start, end, what) =>
+          // if what != current then 
+            val textLength = start - idx
+            if textLength != 0 then 
+              elements.addOne(span(value.slice(idx, start)))
+            elements.addOne(span(cls := what, styleAttr := "font-weight:bold", value.slice(start, end)))
+            idx = end
+          // elements.addOne(p(start, " ", end, " ", what))
+
+      elements.result()
+
     })
   )
 end app
@@ -121,7 +143,7 @@ class Index(text: String):
     for i <- 0 until spl.length
     do
       result.addOne(i -> (curOffset, spl(i)))
-      curOffset += spl(i).length()
+      curOffset += spl(i).length() + 1
 
     result.result().toMap
 
