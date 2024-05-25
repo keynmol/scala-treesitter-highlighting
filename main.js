@@ -1,1 +1,1 @@
-import  './scalajs-frontend.js'
+import './scalajs-frontend.js'

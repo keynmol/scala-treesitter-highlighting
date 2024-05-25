@@ -14,8 +14,6 @@ let parser = await (async () => {
   const parser = new Parser();
   const Lang = await Parser.Language.load('tree-sitter-scala.wasm');
   parser.setLanguage(Lang);
-  // const tree = parser.parse('object Main {def hello = 25}');
-  // console.log(tree.rootNode.toString());
   return parser;
 })();
 
