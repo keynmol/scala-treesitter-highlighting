@@ -6,73 +6,66 @@
   font-size: 12;
 }
 
-code pre {
+.hlts-container {
   background: rgb(31,31,40);
   color: white;
   padding: 25px;
   font-family: myFirstFont;
 }
 
-code pre .function {
+.hlts-function {
   color: rgb(121, 158, 218)
 }
 
-code pre .variable {
-
-}
 
 
-code pre .keyword, .keyword-function, .repeat {
+.hlts-keyword, .hlts-keyword-function, .hlts-repeat {
   color: rgb(151,128,186);
-  /* font-style: italic; */
 }
 
-.punctuation-bracket {
+.hlts-punctuation-bracket {
  color: rgb(154, 172, 203);
 }
 
-.punctuation-special {
+.hlts-punctuation-special {
  color: rgb(127, 180, 202);
 }
 
 
-code pre .type {
+.hlts-type {
   color: rgb(114,169,159);
 }
 
-code pre .string {
+.hlts-string {
   color: rgb(152,187, 108);
 }
 
-code pre .function-call, .method-call {
-  /* color: red; */
-  /* text-decoration: underline; */
+.hlts-function-call, .hlts-method-call {
   color: rgb(126, 156, 216)
 }
 
-
-code pre .number {
+.hlts-number {
   color: pink;
 }
 
-code pre .operator {
+.hlts-operator {
   color: rgb(196, 161, 107);
 }
 
-code pre .parameter {
+.hlts-parameter {
  color: rgb(184, 181, 209)
 
 }
 
-code pre .include {
+.hlts-include {
   color: rgb(228, 104, 118);
 }
 
-code pre .namespace {
+.hlts-namespace {
   color: rgb(122, 168, 159);
 }
 
-code pre .property {
+.hlts-property {
   color: rgb(234, 193, 128)
 }
 

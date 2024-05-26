@@ -89,86 +89,94 @@ def app(lang: Parser.Language) =
   )
   val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
+  val debugToggled = Var(false)
   div(
     textArea(
-      rows := 5,
-      cols := 50,
+      rows := 10,
+      styleAttr := "width: 100%",
       onInput.mapToValue --> codeVar,
       value <-- codeVar
     ),
     div(
       styleAttr := "display: grid",
-      code(pre(children <-- codeVar.signal.map { value =>
-        val tree = Parser.parse(value)
-        val index = Index(value)
-        val matches = query.captures(tree.rootNode)
-
-        val switches = matches
-          .map: capture =>
-            (
-              index.resolve(capture.node.startPosition),
-              index.resolve(capture.node.endPosition),
-              capture.name.replace('.', '-')
-            )
-          // .distinctBy(x => x._1)
-          .sortBy(x => x._2)
-
-        val elements = List.newBuilder[HtmlElement]
-
-        def annotate(text: String, captures: A[Parser.Capture]): String =
-          val lines = text.linesIterator.toList.zipWithIndex
-          val annots = captures.groupMap(_.node.startPosition.row)(identity)
-          val allLines = List.newBuilder[String]
-
-          def newMethod(capture: Parser.Capture): String =
-            " ".*(
-              capture.node.startPosition.column
-            )
-
-          def newMethod0(capture: Parser.Capture): String =
-            "^".*(
-              capture.node.text.length
-            )
-
-          lines.foreach:
-            case (line, idx) =>
-              allLines += line
-              annots
-                .get(idx)
-                .foreach: matches =>
-                  matches.foreach: capture =>
-                    allLines += newMethod(capture) + newMethod0(
-                      capture
-                    ) + " " + capture.name.replace('.', '-')
-          allLines.result().mkString("\n")
-        end annotate
-
-        annotatedCodeVar.set(annotate(value, matches) ++ "\n\n--\n\n" + switches.mkString("\n"))
-
-        var idx = 0
-
-        println(switches.mkString("\n"))
-
-        switches
-          .foreach:
-            case (start, end, what) =>
-              if idx <= start then
-                val textLength = start - idx
-                if textLength != 0 then
-                  elements.addOne(span(value.slice(idx, start)))
-                elements.addOne(
-                  span(
-                    cls := what,
-                    value.slice(start, end)
-                  )
-                )
-                idx = end
-              end if
-
-        elements.result()
-
-      })),
       code(
+        pre(
+          cls := "hlts-container",
+          children <-- codeVar.signal.map { value =>
+            val tree = Parser.parse(value)
+            val index = Index(value)
+            val matches = query.captures(tree.rootNode)
+
+            val switches = matches
+              .map: capture =>
+                (
+                  index.resolve(capture.node.startPosition),
+                  index.resolve(capture.node.endPosition),
+                  capture.name.replace('.', '-')
+                )
+              .sortBy(x => x._2)
+
+            val elements = List.newBuilder[HtmlElement]
+
+            def annotate(text: String, captures: A[Parser.Capture]): String =
+              val lines = text.linesIterator.toList.zipWithIndex
+              val annots = captures.groupMap(_.node.startPosition.row)(identity)
+              val allLines = List.newBuilder[String]
+
+              def newMethod(capture: Parser.Capture): String =
+                " ".*(
+                  capture.node.startPosition.column
+                )
+
+              def newMethod0(capture: Parser.Capture): String =
+                "^".*(
+                  capture.node.text.length
+                )
+
+              lines.foreach:
+                case (line, idx) =>
+                  allLines += line
+                  annots
+                    .get(idx)
+                    .foreach: matches =>
+                      matches.foreach: capture =>
+                        allLines += newMethod(capture) + newMethod0(
+                          capture
+                        ) + " " + capture.name.replace('.', '-')
+              allLines.result().mkString("\n")
+            end annotate
+
+            annotatedCodeVar.set(
+              annotate(value, matches) ++ "\n\n--\n\n" + switches.mkString("\n")
+            )
+
+            var idx = 0
+
+            switches
+              .foreach:
+                case (start, end, what) =>
+                  if idx <= start then
+                    val textLength = start - idx
+                    if textLength != 0 then
+                      elements.addOne(span(value.slice(idx, start)))
+                    elements.addOne(
+                      span(
+                        cls := "hlts-" + what,
+                        value.slice(start, end)
+                      )
+                    )
+                    idx = end
+                  end if
+
+            elements.result()
+
+          }
+        )
+      ),
+      code(
+        display <-- debugToggled.signal.map(
+          if _ then display.block.value else display.none.value
+        ),
         pre(
           child.text <-- annotatedCodeVar
         )
