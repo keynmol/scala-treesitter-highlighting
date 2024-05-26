@@ -10,7 +10,8 @@
     "watchScalajs": "scala-cli --cli-version 1.3.2 package . -w -f -o scalajs-frontend.js --js-module-kind es",
     "buildScalajs": "scala-cli --cli-version 1.3.2 package . -f -o scalajs-frontend.js --js-module-kind es",
     "buildScalajsRelease": "scala-cli --cli-version 1.3.2 package . -f -o scalajs-frontend.js --js-mode release --js-module-kind es",
-    "watch": "concurrently vite npm:watchScalajs"
+    "watch": "concurrently vite npm:watchScalajs",
+    "buildForGithubPages": "npm run buildScalajsRelease && vite build --base=/scala-treesitter-highlighting"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",

@@ -91,15 +91,19 @@ def app(lang: Parser.Language) =
   val query = lang.query(highlightQueries)
   val debugToggled = Var(false)
   div(
+    styleAttr := "width: 80%; margin:auto",
+    h1("Scala syntax highlighter based on TreeSitter"),
     textArea(
       rows := 10,
       styleAttr := "width: 100%",
       onInput.mapToValue --> codeVar,
       value <-- codeVar
     ),
+    input(tpe := "checkbox", onClick.mapToChecked --> debugToggled), "Debug?",
     div(
-      styleAttr := "display: grid",
+      styleAttr := "display: flex",
       code(
+        styleAttr := "flex: 1",
         pre(
           cls := "hlts-container",
           children <-- codeVar.signal.map { value =>
@@ -174,6 +178,7 @@ def app(lang: Parser.Language) =
         )
       ),
       code(
+        styleAttr := "background: black; color: white",
         display <-- debugToggled.signal.map(
           if _ then display.block.value else display.none.value
         ),
