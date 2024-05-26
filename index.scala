@@ -85,7 +85,7 @@ enum Switch:
 
 def app(lang: Parser.Language) =
   val codeVar = Var(
-    indexScala.trim().linesWithSeparators.slice(75, 86).mkString
+    indexScala.trim().linesWithSeparators.slice(85, 89).mkString
   )
   val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
@@ -119,6 +119,17 @@ def app(lang: Parser.Language) =
           val lines = text.linesIterator.toList.zipWithIndex
           val annots = captures.groupMap(_.node.startPosition.row)(identity)
           val allLines = List.newBuilder[String]
+
+          def newMethod(capture: Parser.Capture): String =
+            " ".*(
+              capture.node.startPosition.column
+            )
+
+          def newMethod0(capture: Parser.Capture): String =
+            "^".*(
+              capture.node.text.length
+            )
+
           lines.foreach:
             case (line, idx) =>
               allLines += line
@@ -126,13 +137,13 @@ def app(lang: Parser.Language) =
                 .get(idx)
                 .foreach: matches =>
                   matches.foreach: capture =>
-                    allLines += " ".*(
-                      capture.node.startPosition.column
-                    ) + "^".*(capture.node.text.length) + capture.name.replace('.', '-')
+                    allLines += newMethod(capture) + newMethod0(
+                      capture
+                    ) + " " + capture.name.replace('.', '-')
           allLines.result().mkString("\n")
         end annotate
 
-        annotatedCodeVar.set(annotate(value, matches))
+        annotatedCodeVar.set(annotate(value, matches) ++ "\n\n--\n\n" + switches.mkString("\n"))
 
         var idx = 0
 

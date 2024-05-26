@@ -34,6 +34,10 @@ code pre .string {
   color: orange;
 }
 
+code pre .function-call {
+  color: red;
+}
+
 
 code pre .number {
   color: pink;
