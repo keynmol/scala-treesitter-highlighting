@@ -1,18 +1,14 @@
-# [Scala.js](https://www.scala-js.org/) ❤️ [Scala CLI](https://scala-cli.virtuslab.org/) ❤️ [Vite](https://vitejs.dev/)
+# In-browser syntax highlighting for Scala using Tree Sitter
 
-Minimal template to get you started with Scala.js, Scala CLI and Vite.
+[**Live version**](https://keynmol.github.io/scala-treesitter-highlighting/)
 
-1. Run `npm install`
-2. In two separate terminals:
-   - `npm run watchScalajs` - for continuously rebuilding Scala.js bundle
-   - `npm run dev` - for running Vite's live server 
-3. Happy hacking! Your project will reload automatically as you make changes to [index.scala](./index.scala)
+This WIP project is a space for exploring the usage of Tree Sitter for in-browser syntax highlighting, made possible by [web-tree-sitter](https://www.npmjs.com/package/web-tree-sitter?activeTab=readme) bindings, and the ability to compile Tree Sitter Scala parser to WASM.
 
-## Demo
+![CleanShot 2024-05-26 at 11 21 56](https://github.com/keynmol/scala-treesitter-highlighting/assets/1052965/fda39176-c77e-4922-b7a8-5e96f4ad7d3e)
 
-https://github.com/keynmol/scalajs-scala-cli-vite-template/assets/1052965/c5447aef-317b-45a9-985d-bfb717d46461
+## Contributing
 
-## Caveats
-
-Note that so far Scala CLI reloading is slower than what I usually experience in SBT. It's still fine, but if you want the fastest experience available,
-consider using the [Vite plugin](https://github.com/scala-js/vite-plugin-scalajs) and the [SBT Vite template](https://github.com/scala-js/vite.g8) (`sbt new scala-js/vite.g8`)
+1. Make sure you have Scala CLI installed
+2. Run `npm install`
+3. Run `npm watch`
+4. Happy hacking! Your project will reload automatically as you make changes to [index.scala](./index.scala) or any other files
