@@ -1,9 +1,7 @@
 #content {
   margin:auto;
-  width: 100%;
   padding: 30px;
-  border: 1px solid black;
-  font-size: 12;
+  font-size: 16px;
 }
 
 .hlts-container {
@@ -19,9 +17,15 @@
 
 
 
-.hlts-keyword, .hlts-keyword-function, .hlts-repeat {
+.hlts-keyword, .hlts-keyword-function, .hlts-repeat{
   color: rgb(151,128,186);
 }
+
+.hlts-storageclass{
+  color: rgb(151,128,186);
+  text-decoration: underline;
+}
+
 
 .hlts-punctuation-bracket {
  color: rgb(154, 172, 203);

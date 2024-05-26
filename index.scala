@@ -15,8 +15,8 @@ val imgUrl: String = js.native
 @js.native @JSImport("/highlights.scm?raw", JSImport.Default)
 val highlightQueries: String = js.native
 
-@js.native @JSImport("/index.scala?raw", JSImport.Default)
-val indexScala: String = js.native
+// @js.native @JSImport("/index.scala?raw", JSImport.Default)
+// val indexScala: String = js.native
 
 @js.native @JSImport(
   "web-tree-sitter/tree-sitter.wasm?init&url",
@@ -84,22 +84,67 @@ enum Switch:
   case Off(cls: String)
 
 def app(lang: Parser.Language) =
+  val key = "syntax-highlighter-code"
   val codeVar = Var(
-    indexScala.trim().linesWithSeparators.mkString
+    org.scalajs.dom.window.localStorage.getItem(key) match
+      case s: String =>
+        s
+      case null =>
+        """
+def grammar(year: Int) =
+  inline def token(str: String) =
+    atomic(string(str.toLowerCase())) <~ whitespaces.void
+
+  val PLANET_OF_THE_APES = token("Planet of the Apes")
+  val FOR = token("for")
+  val FROM = token("from")
+  val THE = token("the")
+  val OF = token("of")
+  val BENEATH = token("Beneath")
+  val ESCAPE = token("Escape")
+  val CONQUEST = token("Conquest")
+  val BATTLE = token("Battle")
+  val RISE = token("Rise")
+  val DAWN = token("Dawn")
+  val WAR = token("War")
+  val KINGDOM = token("Kingdom")
+  val RETURN = token("Return")
+  val TO = token("to")
+
+  extension (p: Parsley[Outcome])
+    def releasedIn(releaseYear: Int) =
+      Option.when(year >= releaseYear)(p)
+""".trim
   )
   val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
   val debugToggled = Var(false)
   div(
+    codeVar.signal --> { value =>
+      org.scalajs.dom.window.localStorage.setItem(key, value)
+    },
     styleAttr := "width: 80%; margin:auto",
     h1("Scala syntax highlighter based on TreeSitter"),
+    p(
+      i(
+        "This project is very much a work-in-progress - there are quite obvious bugs and missing niceties."
+      )
+    ),
+    p(
+      a(
+        "Github",
+        href := "https://github.com/keynmol/scala-treesitter-highlighting"
+      )
+    ),
+    h2("Scala code:"),
     textArea(
       rows := 10,
       styleAttr := "width: 100%",
       onInput.mapToValue --> codeVar,
       value <-- codeVar
     ),
-    input(tpe := "checkbox", onClick.mapToChecked --> debugToggled), "Debug?",
+    input(tpe := "checkbox", onClick.mapToChecked --> debugToggled),
+    "Debug?",
     div(
       styleAttr := "display: flex",
       code(
@@ -186,9 +231,29 @@ def app(lang: Parser.Language) =
           child.text <-- annotatedCodeVar
         )
       )
-    )
+    ),
+    ackn
   )
 end app
+
+val ackn =
+  div(
+    h2("Acknowledgements", idAttr := "acknowledgements"),
+    p(
+      "Thanks to the current and past contributors to ",
+      a(
+        "Tree Sitter Scala grammar",
+        href := "https://github.com/tree-sitter/tree-sitter-scala"
+      ),
+      ", authors of Tree Sitter itself",
+      ", the author of ",
+      a(
+        "Kanagawa Neovim theme",
+        href := "https://github.com/rebelot/kanagawa.nvim/"
+      ),
+      ", and countless authors and contributors to Scala and JavaSript tooling, without whom this work wouldn't be posislbe"
+    )
+  )
 
 class Index(text: String):
   val mapping: Map[Int, (Int, String)] =
