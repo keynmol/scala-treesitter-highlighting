@@ -85,7 +85,7 @@ enum Switch:
 
 def app(lang: Parser.Language) =
   val codeVar = Var(
-    indexScala.trim().linesWithSeparators.slice(85, 89).mkString
+    indexScala.trim().linesWithSeparators.mkString
   )
   val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
@@ -152,7 +152,7 @@ def app(lang: Parser.Language) =
         switches
           .foreach:
             case (start, end, what) =>
-              if idx < start then
+              if idx <= start then
                 val textLength = start - idx
                 if textLength != 0 then
                   elements.addOne(span(value.slice(idx, start)))

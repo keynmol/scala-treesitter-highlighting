@@ -7,35 +7,47 @@
 }
 
 code pre {
-  background: #000022;
+  background: rgb(31,31,40);
   color: white;
-  padding: 8px;
+  padding: 25px;
+  font-family: myFirstFont;
 }
 
 code pre .function {
-  color: cyan;
+  color: rgb(121, 158, 218)
 }
 
 code pre .variable {
-  color: yellow;
+
 }
 
 
-code pre .keyword, .keyword-function {
-  color: violet;
-  font-style: italic;
+code pre .keyword, .keyword-function, .repeat {
+  color: rgb(151,128,186);
+  /* font-style: italic; */
 }
+
+.punctuation-bracket {
+ color: rgb(154, 172, 203);
+}
+
+.punctuation-special {
+ color: rgb(127, 180, 202);
+}
+
 
 code pre .type {
-  color: lightgreen;
+  color: rgb(114,169,159);
 }
 
 code pre .string {
-  color: orange;
+  color: rgb(152,187, 108);
 }
 
-code pre .function-call {
-  color: red;
+code pre .function-call, .method-call {
+  /* color: red; */
+  /* text-decoration: underline; */
+  color: rgb(126, 156, 216)
 }
 
 
@@ -44,19 +56,28 @@ code pre .number {
 }
 
 code pre .operator {
-  font-weight: bold;
+  color: rgb(196, 161, 107);
 }
 
 code pre .parameter {
- color: #e9b8f7
+ color: rgb(184, 181, 209)
 
 }
 
 code pre .include {
-color: violet;
-font-weight: bold;
+  color: rgb(228, 104, 118);
 }
 
 code pre .namespace {
-color: green;
+  color: rgb(122, 168, 159);
 }
+
+code pre .property {
+  color: rgb(234, 193, 128)
+}
+
+@font-face {
+  font-family: myFirstFont;
+  src: url(/FiraCode-Regular.ttf);
+}
+

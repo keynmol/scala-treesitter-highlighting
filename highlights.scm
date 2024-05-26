@@ -76,14 +76,14 @@
 ; method invocation
 
 (call_expression
+  function: (field_expression
+    field: (identifier) @method.call))
+
+(call_expression
   function: (identifier) @function.call)
 
 (call_expression
   function: (operator_identifier) @function.call)
-
-(call_expression
-  function: (field_expression
-    field: (identifier) @method.call))
 
 ((call_expression
    function: (identifier) @constructor)
