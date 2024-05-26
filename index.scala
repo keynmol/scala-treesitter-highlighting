@@ -15,6 +15,9 @@ val imgUrl: String = js.native
 @js.native @JSImport("/highlights.scm?raw", JSImport.Default)
 val highlightQueries: String = js.native
 
+@js.native @JSImport("/index.scala?raw", JSImport.Default)
+val indexScala: String = js.native
+
 @js.native @JSImport(
   "web-tree-sitter/tree-sitter.wasm?init&url",
   JSImport.Default
@@ -82,58 +85,9 @@ enum Switch:
 
 def app(lang: Parser.Language) =
   val codeVar = Var(
-    """
-@js.native
-@JSImport("/tree-sitter.js", JSImport.Default)
-object Parser extends js.Any:
-  def parse(path: String): Tree = js.native
-
-  def getLanguage(): Language = js.native
-
-  @js.native
-  trait Language extends js.Any:
-    def query(source: String): Query = js.native
-
-  @js.native
-  trait Query extends js.Any:
-    def matches(node: Node): A[Match] = js.native
-    def captures(node: Node): A[Capture] = js.native
-
-  @js.native
-  trait Tree extends js.Any:
-    val rootNode: Node = js.native
-
-  @js.native
-  trait Node extends js.Any:
-    val id: Int = js.native
-    val children: A[Node] = js.native
-    val text: String = js.native
-    val startPosition: Point = js.native
-    val endPosition: Point = js.native
-
-  @js.native
-  trait Match extends js.Any:
-    val name: String = js.native
-
-  @js.native
-  trait Capture extends js.Any:
-    val name: String = js.native
-    val node: Node = js.native
-    val text: js.UndefOr[String] = js.native
-
-  @js.native
-  trait TreeCursor extends js.Any:
-    val nodeId: Int = js.native
-    val nodeText: String = js.native
-
-  @js.native
-  trait Point extends js.Any:
-    val row: Int = js.native
-    val column: Int = js.native
-end Parser
-
-""".trim
+    indexScala.trim().linesWithSeparators.slice(75, 86).mkString
   )
+  val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
   div(
     textArea(
@@ -142,46 +96,73 @@ end Parser
       onInput.mapToValue --> codeVar,
       value <-- codeVar
     ),
-    code(pre(children <-- codeVar.signal.map { value =>
-      val tree = Parser.parse(value)
-      val index = Index(value)
-      val matches = query.captures(tree.rootNode)
+    div(
+      styleAttr := "display: grid",
+      code(pre(children <-- codeVar.signal.map { value =>
+        val tree = Parser.parse(value)
+        val index = Index(value)
+        val matches = query.captures(tree.rootNode)
 
-      val switches = matches
-        .map: capture =>
-          (
-            index.resolve(capture.node.startPosition),
-            index.resolve(capture.node.endPosition),
-            capture.name.replace('.', '-')
-          )
-        // .distinctBy(x => x._1)
-        .sortBy(x => x._2)
+        val switches = matches
+          .map: capture =>
+            (
+              index.resolve(capture.node.startPosition),
+              index.resolve(capture.node.endPosition),
+              capture.name.replace('.', '-')
+            )
+          // .distinctBy(x => x._1)
+          .sortBy(x => x._2)
 
-      val elements = List.newBuilder[HtmlElement]
+        val elements = List.newBuilder[HtmlElement]
 
-      var idx = 0
+        def annotate(text: String, captures: A[Parser.Capture]): String =
+          val lines = text.linesIterator.toList.zipWithIndex
+          val annots = captures.groupMap(_.node.startPosition.row)(identity)
+          val allLines = List.newBuilder[String]
+          lines.foreach:
+            case (line, idx) =>
+              allLines += line
+              annots
+                .get(idx)
+                .foreach: matches =>
+                  matches.foreach: capture =>
+                    allLines += " ".*(
+                      capture.node.startPosition.column
+                    ) + "^".*(capture.node.text.length) + capture.name.replace('.', '-')
+          allLines.result().mkString("\n")
+        end annotate
 
-      println(switches.mkString("\n"))
+        annotatedCodeVar.set(annotate(value, matches))
 
-      switches
-        .foreach:
-          case (start, end, what) =>
-            if idx < start then
-              val textLength = start - idx
-              if textLength != 0 then
-                elements.addOne(span(value.slice(idx, start)))
-              elements.addOne(
-                span(
-                  cls := what,
-                  value.slice(start, end)
+        var idx = 0
+
+        println(switches.mkString("\n"))
+
+        switches
+          .foreach:
+            case (start, end, what) =>
+              if idx < start then
+                val textLength = start - idx
+                if textLength != 0 then
+                  elements.addOne(span(value.slice(idx, start)))
+                elements.addOne(
+                  span(
+                    cls := what,
+                    value.slice(start, end)
+                  )
                 )
-              )
-              idx = end
-            end if
+                idx = end
+              end if
 
-      elements.result()
+        elements.result()
 
-    }))
+      })),
+      code(
+        pre(
+          child.text <-- annotatedCodeVar
+        )
+      )
+    )
   )
 end app
 
@@ -196,9 +177,6 @@ class Index(text: String):
       curOffset += spl(i).length() + 1
 
     result.result().toMap
-
-    // text.split("\n").zipWithIndex.foldLeft(0 -> ):
-    //   case (curOffset, (line, idx)) =>
   end mapping
 
   def resolve(point: Parser.Point): Int =
