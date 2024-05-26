@@ -3,20 +3,20 @@
 //> using dep com.olvind::scalablytyped-runtime::2.4.2
 //> using dep com.raquo::laminar::17.0.0
 //> using scala 3.5.0-RC1
+//> using option -Wunused:all
 
-import org.scalajs.dom.*
-import scalajs.js, js.annotation.*, js.Dynamic.literal as J, js.Array as A
-import scala.scalajs.js.Promise
 import com.raquo.laminar.api.L.*
+import org.scalajs.dom.*
+
+import scalajs.js
+import js.annotation.*
+import js.Array as Arr
 
 @js.native @JSImport("/tree-sitter-scala.wasm?init&url", JSImport.Default)
 val imgUrl: String = js.native
 
 @js.native @JSImport("/highlights.scm?raw", JSImport.Default)
 val highlightQueries: String = js.native
-
-// @js.native @JSImport("/index.scala?raw", JSImport.Default)
-// val indexScala: String = js.native
 
 @js.native @JSImport(
   "web-tree-sitter/tree-sitter.wasm?init&url",
@@ -37,8 +37,8 @@ object Parser extends js.Any:
 
   @js.native
   trait Query extends js.Any:
-    def matches(node: Node): A[Match] = js.native
-    def captures(node: Node): A[Capture] = js.native
+    def matches(node: Node): Arr[Match] = js.native
+    def captures(node: Node): Arr[Capture] = js.native
 
   @js.native
   trait Tree extends js.Any:
@@ -47,7 +47,7 @@ object Parser extends js.Any:
   @js.native
   trait Node extends js.Any:
     val id: Int = js.native
-    val children: A[Node] = js.native
+    val children: Arr[Node] = js.native
     val text: String = js.native
     val startPosition: Point = js.native
     val endPosition: Point = js.native
@@ -167,7 +167,7 @@ def grammar(year: Int) =
 
             val elements = List.newBuilder[HtmlElement]
 
-            def annotate(text: String, captures: A[Parser.Capture]): String =
+            def annotate(text: String, captures: Arr[Parser.Capture]): String =
               val lines = text.linesIterator.toList.zipWithIndex
               val annots = captures.groupMap(_.node.startPosition.row)(identity)
               val allLines = List.newBuilder[String]
