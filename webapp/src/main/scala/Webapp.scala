@@ -81,12 +81,13 @@ def app(treesitter: TreeSitter) =
             val matches = query.captures(tree.rootNode)
 
             val switches = matches.toArray
-              .map: capture =>
-                (
-                  index.resolve(capture.node.startPoint),
-                  index.resolve(capture.node.endPoint),
-                  capture.name(query).replace('.', '-')
-                )
+              .flatMap: capture =>
+                capture.nodes.map: node =>
+                  (
+                    index.resolve(node.startPoint),
+                    index.resolve(node.endPoint),
+                    capture.name(query).replace('.', '-')
+                  )
               .sortBy(x => x._2)
 
             console.log(switches)
@@ -145,16 +146,21 @@ def annotate[TS <: TreeSitter & Singleton](
     query: ts.Query,
     captures: Iterable[ts.Capture]
 ): String =
+  case class CaptureGroup(label: String, node: ts.Node)
   val lines = text.linesIterator.toList.zipWithIndex
-  val annots = captures.groupMap(_.node.startPoint.row)(identity)
+  // val annots = captures.groupMap(_.node.startPoint.row)(identity)
+  val annots = captures
+    .flatMap(c => c.nodes.map(n => CaptureGroup(c.name(query), n)))
+    .groupMap(_.node.startPoint.row)(identity)
+
   val allLines = List.newBuilder[String]
 
-  def indent(capture: ts.Capture): String =
+  def indent(capture: CaptureGroup): String =
     " ".*(
       capture.node.startPoint.column
     )
 
-  def mark(capture: ts.Capture): String =
+  def mark(capture: CaptureGroup): String =
     "^".*(
       capture.node.text(text).length
     )
@@ -168,7 +174,7 @@ def annotate[TS <: TreeSitter & Singleton](
           matches.foreach: capture =>
             allLines += indent(capture) + mark(
               capture
-            ) + " " + capture.name(query).replace('.', '-')
+            ) + " " + capture.label.replace('.', '-')
   allLines.result().mkString("\n")
 end annotate
 

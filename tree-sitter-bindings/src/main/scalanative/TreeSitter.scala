@@ -34,13 +34,13 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
   end parse
 
   extension (t: Tree)
-    override inline def rootNode =
+    override def rootNode =
       val newValue = alloc[TSNode]()
       ts_tree_root_node(t)(newValue)
       newValue
 
   extension (q: Query)
-    override inline def captures(node: Node): Iterable[Capture] =
+    override def captures(node: Node): Iterable[Capture] =
       val builder = List.newBuilder[Capture]
       val cursor = ts_query_cursor_new()
       ts_query_cursor_exec(cursor, q, node.DEREF);
@@ -70,10 +70,10 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
 
   extension (t: Capture)
     @annotation.targetName("capture_name")
-    override inline def name(q: Query): String =
+    override def name(q: Query): String =
       val str = ts_query_capture_name_for_id(q, t.DEREF.id, stackalloc[UInt]())
       fromCString(str)
-    override inline def nodes: Iterable[Node] =
+    override def nodes: Iterable[Node] =
       val builder = Array.newBuilder[Node]
       for i <- 0 until t.DEREF.capture_count.toInt do
         val p = t.DEREF.captures + i
@@ -81,13 +81,10 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
         !n = t.DEREF.captures.DEREF.node
         builder += n
       builder.result()
-
-    // override inline def text(source: String): Option[String] =
-    //   Some(node.text(source))
   end extension
 
   extension (t: Node)
-    override inline def children: Iterable[Node] =
+    override def children: Iterable[Node] =
       val children = Array.newBuilder[Node]
       val cnt = treesitter_native.functions.ts_node_child_count(t)
       for childId <- 0 until cnt.toInt do
@@ -97,22 +94,19 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
 
       children.result()
 
-    override inline def startPoint =
+    override def startPoint =
       val sp = alloc[TSPoint]()
       ts_node_start_point(t)(sp)
       sp
 
-    override inline def endPoint =
+    override def endPoint =
       val sp = alloc[TSPoint]()
       ts_node_end_point(t)(sp)
       sp
 
-    override inline def text(s: String) =
+    override def text(s: String) =
       val start = ts_node_start_byte(t).toInt
       val finish = ts_node_end_byte(t).toInt
-
-      println(t.DEREF.id)
-      println(s"$start - $finish")
 
       new String(s.getBytes().slice(start, finish))
   end extension
@@ -122,7 +116,7 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
     override inline def row: Int = p.DEREF.row.toInt
 
   extension (q: Language)
-    override inline def query(source: String): Query =
+    override def query(source: String): Query =
       Zone:
         val erroffset = stackalloc[UInt]()
         val err = stackalloc[TSQueryError]()

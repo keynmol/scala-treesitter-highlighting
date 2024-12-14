@@ -24,8 +24,7 @@ class TreeSitter(p: Parser.type) extends TreesitterInterface:
   extension (t: Capture)
     @annotation.targetName("capture_name")
     override inline def name(q: Query): String = t.name
-    override inline def node: Node = t.node
-    override inline def text(source: String): Option[String] = t.text.toOption
+    override inline def nodes: Iterable[Node] = Arr(t.node)
 
   // extension (t: Match) inline def name: String = t.name
 
