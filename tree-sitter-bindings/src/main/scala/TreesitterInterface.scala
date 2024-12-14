@@ -32,8 +32,7 @@ trait TreesitterInterface:
   extension (t: Capture)
     @targetName("capture_name")
     inline def name(q: Query): String
-    inline def node: Node
-    inline def text(source: String): Option[String]
+    inline def nodes: Iterable[Node]
 
   type Query
   extension (q: Query) inline def captures(node: Node): Iterable[Capture]

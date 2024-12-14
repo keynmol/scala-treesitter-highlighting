@@ -4,6 +4,8 @@ import scalanative.unsafe.*
 import treesitter_native.all.*
 import scala.scalanative.unsigned.*
 
+extension [A: Tag](p: Ptr[A]) private inline def DEREF: A = !p
+
 class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
     z: Zone
 ) extends TreesitterInterface:
@@ -14,15 +16,13 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
   override opaque type Capture = Ptr[TSQueryMatch]
   override opaque type Query = Ptr[TSQuery]
 
-  extension [A: Tag](p: Ptr[A]) inline def DEREF: A = !p
-
   override inline def getLanguage = language
 
   @volatile private var langSet = false
 
   override inline def parse(source: String) =
     val str = toCString(source)
-    if !langSet then 
+    if !langSet then
       ts_parser_set_language(parser, language)
       langSet = true
     ts_parser_parse_string(
@@ -31,6 +31,7 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
       str,
       scalanative.libc.string.strlen(str).toUInt
     )
+  end parse
 
   extension (t: Tree)
     override inline def rootNode =
@@ -49,12 +50,20 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
       while { hasNext = ts_query_cursor_next_match(cursor, mtch); hasNext } do
         val deref = !mtch
 
+        val capturesCopy = alloc[TSQueryCapture](deref.capture_count)
+
+        for i <- 0 until deref.capture_count.toInt do
+          val c = deref.captures(i)
+          capturesCopy(i) = !treesitter_native.structs.TSQueryCapture
+            .apply(c.node, c.index)
+
         builder += treesitter_native.structs.TSQueryMatch.apply(
           deref.id,
           deref.pattern_index,
           deref.capture_count,
-          deref.captures
+          capturesCopy
         )(using z)
+      end while
       builder.result()
     end captures
   end extension
@@ -64,12 +73,17 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
     override inline def name(q: Query): String =
       val str = ts_query_capture_name_for_id(q, t.DEREF.id, stackalloc[UInt]())
       fromCString(str)
-    override inline def node: Node =
-      val n = alloc[TSNode]()
-      !n = t.DEREF.captures.DEREF.node
-      n
-    override inline def text(source: String): Option[String] =
-      Some(node.text(source))
+    override inline def nodes: Iterable[Node] =
+      val builder = Array.newBuilder[Node]
+      for i <- 0 until t.DEREF.capture_count.toInt do
+        val p = t.DEREF.captures + i
+        val n = alloc[TSNode]()
+        !n = t.DEREF.captures.DEREF.node
+        builder += n
+      builder.result()
+
+    // override inline def text(source: String): Option[String] =
+    //   Some(node.text(source))
   end extension
 
   extension (t: Node)
@@ -96,6 +110,9 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
     override inline def text(s: String) =
       val start = ts_node_start_byte(t).toInt
       val finish = ts_node_end_byte(t).toInt
+
+      println(t.DEREF.id)
+      println(s"$start - $finish")
 
       new String(s.getBytes().slice(start, finish))
   end extension

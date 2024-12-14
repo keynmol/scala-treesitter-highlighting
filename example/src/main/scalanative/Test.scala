@@ -27,7 +27,7 @@ object Hello:
 
     val q = ts.getLanguage.query("(type_identifier) @my.type")
 
-    println(q.captures(tree.rootNode).map(_.node.text(source)))
+    println(q.captures(tree.rootNode).flatMap(_.nodes).map(_.text(source)))
     println(q.captures(tree.rootNode).map(_.name(q)))
 
     // println(ts.captures())
