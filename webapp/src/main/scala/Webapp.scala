@@ -85,7 +85,7 @@ def app(treesitter: TreeSitter) =
                 (
                   index.resolve(capture.node.startPoint),
                   index.resolve(capture.node.endPoint),
-                  capture.name.replace('.', '-')
+                  capture.name(query).replace('.', '-')
                 )
               .sortBy(x => x._2)
 
@@ -94,7 +94,12 @@ def app(treesitter: TreeSitter) =
             val elements = List.newBuilder[HtmlElement]
 
             annotatedCodeVar.set(
-              annotate(value, treesitter, matches) ++ "\n\n--\n\n" + switches
+              annotate(
+                value,
+                treesitter,
+                query,
+                matches
+              ) ++ "\n\n--\n\n" + switches
                 .mkString("\n")
             )
 
@@ -137,6 +142,7 @@ end app
 def annotate[TS <: TreeSitter & Singleton](
     text: String,
     ts: TS,
+    query: ts.Query,
     captures: Iterable[ts.Capture]
 ): String =
   val lines = text.linesIterator.toList.zipWithIndex
@@ -150,7 +156,7 @@ def annotate[TS <: TreeSitter & Singleton](
 
   def mark(capture: ts.Capture): String =
     "^".*(
-      capture.node.text.length
+      capture.node.text(text).length
     )
 
   lines.foreach:
@@ -162,7 +168,7 @@ def annotate[TS <: TreeSitter & Singleton](
           matches.foreach: capture =>
             allLines += indent(capture) + mark(
               capture
-            ) + " " + capture.name.replace('.', '-')
+            ) + " " + capture.name(query).replace('.', '-')
   allLines.result().mkString("\n")
 end annotate
 

@@ -59,3 +59,23 @@ lazy val webapp = project
 lazy val bindings = projectMatrix
   .in(file("tree-sitter-bindings"))
   .jsPlatform(Seq(Versions.Scala3_LTS))
+  .nativePlatform(Seq(Versions.Scala3_LTS))
+
+lazy val example = projectMatrix
+  .in(file("example"))
+  .nativePlatform(
+    Seq(Versions.Scala3_LTS),
+    Seq.empty,
+    configure = proj =>
+      proj
+        .enablePlugins(VcpkgNativePlugin)
+        .settings(vcpkgDependencies := VcpkgDependencies("tree-sitter"))
+  )
+  .dependsOn(bindings)
+  .settings(
+    nativeConfig ~= { config =>
+      config.withLinkingOptions(
+        _ :+ "/Users/velvetbaldmime/projects/tree-sitter/tree-sitter-scala/src/libtreesitter-scala.a"
+      )
+    }
+  )

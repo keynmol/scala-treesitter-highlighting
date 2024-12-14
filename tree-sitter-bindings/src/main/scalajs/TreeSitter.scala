@@ -9,7 +9,6 @@ class TreeSitter(p: Parser.type) extends TreesitterInterface:
   override opaque type Point = p.Point
   override opaque type Language = p.Language
   override opaque type Node = p.Node
-  override opaque type Match = p.Match
   override opaque type Capture = p.Capture
   override opaque type Query = p.Query
 
@@ -21,22 +20,20 @@ class TreeSitter(p: Parser.type) extends TreesitterInterface:
   extension (q: Query)
     override inline def captures(node: Node): Iterable[Capture] =
       q.captures(node).toArray
-    override inline def matches(node: Node): Iterable[Match] =
-      q.matches(node).toArray
 
   extension (t: Capture)
     @annotation.targetName("capture_name")
-    override inline def name: String = t.name
+    override inline def name(q: Query): String = t.name
     override inline def node: Node = t.node
-    override inline def text: Option[String] = t.text.toOption
+    override inline def text(source: String): Option[String] = t.text.toOption
 
-  extension (t: Match) inline def name: String = t.name
+  // extension (t: Match) inline def name: String = t.name
 
   extension (t: Node)
     override inline def children: Iterable[Node] = t.children.toArray
     override inline def startPoint = t.startPosition
     override inline def endPoint = t.endPosition
-    override inline def text = t.text
+    override inline def text(source: String) = t.text
 
   extension (p: Point)
     override inline def column: Int = p.column

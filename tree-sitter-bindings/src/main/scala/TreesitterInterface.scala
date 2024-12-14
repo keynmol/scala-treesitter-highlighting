@@ -20,23 +20,21 @@ trait TreesitterInterface:
 
   type Node
   extension (t: Node)
-   inline def children: Iterable[Node]
-   inline def startPoint: Point
-   inline def endPoint: Point
-   inline def text: String
+    inline def children: Iterable[Node]
+    inline def startPoint: Point
+    inline def endPoint: Point
+    inline def text(source: String): String
 
-  type Match
-  extension (t: Match) inline def name: String
+  // type Match
+  // extension (t: Match) inline def name: String
 
   type Capture
   extension (t: Capture)
     @targetName("capture_name")
-    inline def name: String
+    inline def name(q: Query): String
     inline def node: Node
-    inline def text: Option[String]
+    inline def text(source: String): Option[String]
 
   type Query
-  extension (q: Query)
-    inline def matches(node: Node): Iterable[Match]
-    inline def captures(node: Node): Iterable[Capture]
+  extension (q: Query) inline def captures(node: Node): Iterable[Capture]
 end TreesitterInterface
