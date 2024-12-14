@@ -1,9 +1,4 @@
-//> using platform scala-js
-//> using dep org.scala-js::scalajs-dom::2.8.0
-//> using dep com.olvind::scalablytyped-runtime::2.4.2
-//> using dep com.raquo::laminar::17.0.0
-//> using scala 3.5.0-RC1
-//> using option -Wunused:all
+package ts_highlight.webapp
 
 import com.raquo.laminar.api.L.*
 import org.scalajs.dom.*
@@ -11,6 +6,8 @@ import org.scalajs.dom.*
 import scalajs.js
 import js.annotation.*
 import js.Array as Arr
+
+import ts_highlight.*
 
 @js.native @JSImport("/tree-sitter-scala.wasm?init&url", JSImport.Default)
 val imgUrl: String = js.native
@@ -24,55 +21,6 @@ val highlightQueries: String = js.native
 )
 val wasmInit: String = js.native
 
-@js.native
-@JSImport("/tree-sitter.js", JSImport.Default)
-object Parser extends js.Any:
-  def parse(path: String): Tree = js.native
-
-  def getLanguage(): Language = js.native
-
-  @js.native
-  trait Language extends js.Any:
-    def query(source: String): Query = js.native
-
-  @js.native
-  trait Query extends js.Any:
-    def matches(node: Node): Arr[Match] = js.native
-    def captures(node: Node): Arr[Capture] = js.native
-
-  @js.native
-  trait Tree extends js.Any:
-    val rootNode: Node = js.native
-
-  @js.native
-  trait Node extends js.Any:
-    val id: Int = js.native
-    val children: Arr[Node] = js.native
-    val text: String = js.native
-    val startPosition: Point = js.native
-    val endPosition: Point = js.native
-
-  @js.native
-  trait Match extends js.Any:
-    val name: String = js.native
-
-  @js.native
-  trait Capture extends js.Any:
-    val name: String = js.native
-    val node: Node = js.native
-    val text: js.UndefOr[String] = js.native
-
-  @js.native
-  trait TreeCursor extends js.Any:
-    val nodeId: Int = js.native
-    val nodeText: String = js.native
-
-  @js.native
-  trait Point extends js.Any:
-    val row: Int = js.native
-    val column: Int = js.native
-end Parser
-
 def show(n: Parser.Node) =
   import n.*
   s"Node[${startPosition.row},${startPosition.column} -> ${endPosition.row},${endPosition.column}]"
@@ -83,38 +31,14 @@ enum Switch:
   case On(cls: String)
   case Off(cls: String)
 
-def app(lang: Parser.Language) =
+def app(treesitter: TreeSitter) =
+  val lang = treesitter.getLanguage
   val key = "syntax-highlighter-code"
   val codeVar = Var(
     org.scalajs.dom.window.localStorage.getItem(key) match
       case s: String =>
         s
-      case null =>
-        """
-def grammar(year: Int) =
-  inline def token(str: String) =
-    atomic(string(str.toLowerCase())) <~ whitespaces.void
-
-  val PLANET_OF_THE_APES = token("Planet of the Apes")
-  val FOR = token("for")
-  val FROM = token("from")
-  val THE = token("the")
-  val OF = token("of")
-  val BENEATH = token("Beneath")
-  val ESCAPE = token("Escape")
-  val CONQUEST = token("Conquest")
-  val BATTLE = token("Battle")
-  val RISE = token("Rise")
-  val DAWN = token("Dawn")
-  val WAR = token("War")
-  val KINGDOM = token("Kingdom")
-  val RETURN = token("Return")
-  val TO = token("to")
-
-  extension (p: Parsley[Outcome])
-    def releasedIn(releaseYear: Int) =
-      Option.when(year >= releaseYear)(p)
-""".trim
+      case null => SAMPLE_CODE
   )
   val annotatedCodeVar = Var("")
   val query = lang.query(highlightQueries)
@@ -152,51 +76,26 @@ def grammar(year: Int) =
         pre(
           cls := "hlts-container",
           children <-- codeVar.signal.map { value =>
-            val tree = Parser.parse(value)
-            val index = Index(value)
+            val tree = treesitter.parse(value)
+            val index = Index(value, treesitter)
             val matches = query.captures(tree.rootNode)
 
-            val switches = matches
+            val switches = matches.toArray
               .map: capture =>
                 (
-                  index.resolve(capture.node.startPosition),
-                  index.resolve(capture.node.endPosition),
+                  index.resolve(capture.node.startPoint),
+                  index.resolve(capture.node.endPoint),
                   capture.name.replace('.', '-')
                 )
               .sortBy(x => x._2)
 
+            console.log(switches)
+
             val elements = List.newBuilder[HtmlElement]
 
-            def annotate(text: String, captures: Arr[Parser.Capture]): String =
-              val lines = text.linesIterator.toList.zipWithIndex
-              val annots = captures.groupMap(_.node.startPosition.row)(identity)
-              val allLines = List.newBuilder[String]
-
-              def newMethod(capture: Parser.Capture): String =
-                " ".*(
-                  capture.node.startPosition.column
-                )
-
-              def newMethod0(capture: Parser.Capture): String =
-                "^".*(
-                  capture.node.text.length
-                )
-
-              lines.foreach:
-                case (line, idx) =>
-                  allLines += line
-                  annots
-                    .get(idx)
-                    .foreach: matches =>
-                      matches.foreach: capture =>
-                        allLines += newMethod(capture) + newMethod0(
-                          capture
-                        ) + " " + capture.name.replace('.', '-')
-              allLines.result().mkString("\n")
-            end annotate
-
             annotatedCodeVar.set(
-              annotate(value, matches) ++ "\n\n--\n\n" + switches.mkString("\n")
+              annotate(value, treesitter, matches) ++ "\n\n--\n\n" + switches
+                .mkString("\n")
             )
 
             var idx = 0
@@ -218,7 +117,6 @@ def grammar(year: Int) =
                   end if
 
             elements.result()
-
           }
         )
       ),
@@ -235,6 +133,38 @@ def grammar(year: Int) =
     ackn
   )
 end app
+
+def annotate[TS <: TreeSitter & Singleton](
+    text: String,
+    ts: TS,
+    captures: Iterable[ts.Capture]
+): String =
+  val lines = text.linesIterator.toList.zipWithIndex
+  val annots = captures.groupMap(_.node.startPoint.row)(identity)
+  val allLines = List.newBuilder[String]
+
+  def indent(capture: ts.Capture): String =
+    " ".*(
+      capture.node.startPoint.column
+    )
+
+  def mark(capture: ts.Capture): String =
+    "^".*(
+      capture.node.text.length
+    )
+
+  lines.foreach:
+    case (line, idx) =>
+      allLines += line
+      annots
+        .get(idx)
+        .foreach: matches =>
+          matches.foreach: capture =>
+            allLines += indent(capture) + mark(
+              capture
+            ) + " " + capture.name.replace('.', '-')
+  allLines.result().mkString("\n")
+end annotate
 
 val ackn =
   div(
@@ -255,7 +185,7 @@ val ackn =
     )
   )
 
-class Index(text: String):
+class Index[T <: TreeSitter & Singleton](text: String, val ts: T):
   val mapping: Map[Int, (Int, String)] =
     var curOffset = 0
     val spl = text.split("\n")
@@ -268,7 +198,7 @@ class Index(text: String):
     result.result().toMap
   end mapping
 
-  def resolve(point: Parser.Point): Int =
+  def resolve(point: ts.Point): Int =
     mapping(point.row) match
       case (curOffset, _) =>
         curOffset + point.column
@@ -276,6 +206,33 @@ class Index(text: String):
 end Index
 
 @main def hello =
-  val parser = Parser.getLanguage()
-  render(document.getElementById("content"), app(parser))
+  val interface = TreeSitter(Parser)
+  render(document.getElementById("content"), app(interface))
 end hello
+
+val SAMPLE_CODE =
+  """
+def grammar(year: Int) =
+  inline def token(str: String) =
+    atomic(string(str.toLowerCase())) <~ whitespaces.void
+
+  val PLANET_OF_THE_APES = token("Planet of the Apes")
+  val FOR = token("for")
+  val FROM = token("from")
+  val THE = token("the")
+  val OF = token("of")
+  val BENEATH = token("Beneath")
+  val ESCAPE = token("Escape")
+  val CONQUEST = token("Conquest")
+  val BATTLE = token("Battle")
+  val RISE = token("Rise")
+  val DAWN = token("Dawn")
+  val WAR = token("War")
+  val KINGDOM = token("Kingdom")
+  val RETURN = token("Return")
+  val TO = token("to")
+
+  extension (p: Parsley[Outcome])
+    def releasedIn(releaseYear: Int) =
+      Option.when(year >= releaseYear)(p)
+""".trim

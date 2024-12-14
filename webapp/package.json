@@ -14,6 +14,7 @@
     "buildForGithubPages": "npm run buildScalajsRelease && vite build --base=/scala-treesitter-highlighting"
   },
   "devDependencies": {
+    "@scala-js/vite-plugin-scalajs": "^1.0.0",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
     "postcss": "^8.4.38",
