@@ -1,5 +1,10 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["*"]
 
 jobs:
   build:
@@ -9,12 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v6.3
-      - uses: VirtusLab/scala-cli-setup@main
-        with:
-          power: true
-      - run: npm install && npm run buildForGithubPages
+      - uses: sbt/setup-sbt@v1
+      - run: cd webapp && npm install && npm run buildForGithubPages
       - name: Publish gh-pages
+        if: (github.ref == 'refs/heads/main')
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./webapp/dist

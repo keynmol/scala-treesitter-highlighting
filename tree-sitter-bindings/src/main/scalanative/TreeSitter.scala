@@ -81,7 +81,7 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
 
   extension (t: Capture)
     @annotation.targetName("capture_name")
-    override def name(q: Query) = 
+    override def name(q: Query) =
       val length = stackalloc[UInt]()
       val str = ts_query_capture_name_for_id(q, t.DEREF.index, length)
       val strZero = stackalloc[CChar](length.DEREF.toInt + 1)
