@@ -8,19 +8,20 @@ extension [A: Tag](p: Ptr[A]) private inline def DEREF: A = !p
 
 class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
     z: Zone
-) extends TreesitterInterface:
+) extends TreeSitterInterface:
   override opaque type Tree = Ptr[TSTree]
   override opaque type Point = Ptr[TSPoint]
   override opaque type Language = Ptr[TSLanguage]
   override opaque type Node = Ptr[TSNode]
-  override opaque type Capture = Ptr[TSQueryMatch]
+  override opaque type Capture = Ptr[TSQueryCapture]
+  override opaque type Match = Ptr[TSQueryMatch]
   override opaque type Query = Ptr[TSQuery]
 
   override inline def getLanguage = language
 
   @volatile private var langSet = false
 
-  override inline def parse(source: String) =
+  override def parse(source: String) =
     val str = toCString(source)
     if !langSet then
       ts_parser_set_language(parser, language)
@@ -40,8 +41,8 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
       newValue
 
   extension (q: Query)
-    override def captures(node: Node): Iterable[Capture] =
-      val builder = List.newBuilder[Capture]
+    override def matches(node: Node): Iterable[Match] =
+      val builder = List.newBuilder[Match]
       val cursor = ts_query_cursor_new()
       ts_query_cursor_exec(cursor, q, node.DEREF);
 
@@ -65,22 +66,34 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
         )(using z)
       end while
       builder.result()
-    end captures
   end extension
+
+  extension (t: Match)
+    override def captures =
+      val builder = Array.newBuilder[Capture]
+
+      for i <- 0 until t.DEREF.capture_count.toInt do
+        val c = t.DEREF.captures(i)
+        builder += treesitter_native.structs.TSQueryCapture
+          .apply(c.node, c.index)
+
+      builder.result()
 
   extension (t: Capture)
     @annotation.targetName("capture_name")
-    override def name(q: Query): String =
-      val str = ts_query_capture_name_for_id(q, t.DEREF.id, stackalloc[UInt]())
-      fromCString(str)
-    override def nodes: Iterable[Node] =
-      val builder = Array.newBuilder[Node]
-      for i <- 0 until t.DEREF.capture_count.toInt do
-        val p = t.DEREF.captures + i
-        val n = alloc[TSNode]()
-        !n = t.DEREF.captures.DEREF.node
-        builder += n
-      builder.result()
+    override def name(q: Query) = 
+      val length = stackalloc[UInt]()
+      val str = ts_query_capture_name_for_id(q, t.DEREF.index, length)
+      val strZero = stackalloc[CChar](length.DEREF.toInt + 1)
+      scalanative.libc.string.memcpy(strZero, str, !length)
+      strZero(!length) = 0.toByte
+      assert(str != null, "ts_query_capture_name_for_id returned null")
+      fromCString(strZero)
+
+    override def node: Node =
+      val n = alloc[TSNode]()
+      !n = t.DEREF.node
+      n
   end extension
 
   extension (t: Node)

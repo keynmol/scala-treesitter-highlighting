@@ -27,10 +27,6 @@ def show(n: Parser.Node) =
 
 extension [T <: js.Any](t: T) def dump() = console.log(t)
 
-enum Switch:
-  case On(cls: String)
-  case Off(cls: String)
-
 def app(treesitter: TreeSitter) =
   val lang = treesitter.getLanguage
   val key = "syntax-highlighter-code"
@@ -76,6 +72,13 @@ def app(treesitter: TreeSitter) =
         pre(
           cls := "hlts-container",
           children <-- codeVar.signal.map { value =>
+            println(
+              HighlightTokenizer(
+                value,
+                highlightQueries,
+                treesitter
+              ).tokens.toList
+            )
             val tree = treesitter.parse(value)
             val index = Index(value, treesitter)
             val matches = query.captures(tree.rootNode)
@@ -89,8 +92,6 @@ def app(treesitter: TreeSitter) =
                     capture.name(query).replace('.', '-')
                   )
               .sortBy(x => x._2)
-
-            console.log(switches)
 
             val elements = List.newBuilder[HtmlElement]
 

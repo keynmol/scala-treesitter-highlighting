@@ -4,7 +4,7 @@ import scalajs.js
 import js.annotation.*
 import js.Array as Arr
 
-class TreeSitter(p: Parser.type) extends TreesitterInterface:
+class TreeSitter(p: Parser.type) extends TreeSitterInterface:
   override opaque type Tree = p.Tree
   override opaque type Point = p.Point
   override opaque type Language = p.Language
