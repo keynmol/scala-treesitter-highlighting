@@ -22,8 +22,6 @@ class HighlightTokenizer[TS <: TreeSitterInterface & Singleton](
         )
     .sortBy(x => x._2)
 
-  println(switches)
-
   lazy val tokens: Array[HighlightToken] =
     val builder = Array.newBuilder[HighlightToken]
 

@@ -39,18 +39,15 @@ def grammar(year: Int) =
 """
 
     val highlight = HighlightTokenizer(source, QUERIES, ts)
-    // println(highlight.tokens.toList)
-    highlight.tokens.foreach: tok =>
-      println(s"$tok -- ${source.slice(tok.start, tok.finish)}")
-      
-
     val code = new StringBuilder
 
     highlight.tokens.foreach: token =>
       val theme = token.kind.collect:
-        case "punctiation-delimiter" => Console.BOLD
-        case s"keyword$rest"         => Console.RED
-        case s"string"               => Console.GREEN
+        case s"punctiation-$rest"   => Console.BOLD
+        case s"keyword$rest"        => Console.RED
+        case s"storageclass"        => Console.RED
+        case s"string"              => Console.GREEN
+        case s"method" | "function" => Console.YELLOW
 
       code.addAll(
         theme.getOrElse("") +
