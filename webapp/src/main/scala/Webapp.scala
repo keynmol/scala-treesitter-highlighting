@@ -37,7 +37,6 @@ def app(treesitter: TreeSitter) =
       case null => SAMPLE_CODE
   )
   val annotatedCodeVar = Var("")
-  val query = lang.query(highlightQueries)
   val debugToggled = Var(false)
   div(
     codeVar.signal --> { value =>
@@ -71,57 +70,23 @@ def app(treesitter: TreeSitter) =
         styleAttr := "flex: 1",
         pre(
           cls := "hlts-container",
-          children <-- codeVar.signal.map { value =>
-            println(
+          children <-- codeVar.signal.map { sourceCode =>
+            val highlight =
               HighlightTokenizer(
-                value,
+                sourceCode,
                 highlightQueries,
                 treesitter
               ).tokens.toList
-            )
-            val tree = treesitter.parse(value)
-            val index = Index(value, treesitter)
-            val matches = query.captures(tree.rootNode)
-
-            val switches = matches.toArray
-              .flatMap: capture =>
-                capture.nodes.map: node =>
-                  (
-                    index.resolve(node.startPoint),
-                    index.resolve(node.endPoint),
-                    capture.name(query).replace('.', '-')
-                  )
-              .sortBy(x => x._2)
 
             val elements = List.newBuilder[HtmlElement]
 
-            annotatedCodeVar.set(
-              annotate(
-                value,
-                treesitter,
-                query,
-                matches
-              ) ++ "\n\n--\n\n" + switches
-                .mkString("\n")
-            )
-
-            var idx = 0
-
-            switches
-              .foreach:
-                case (start, end, what) =>
-                  if idx <= start then
-                    val textLength = start - idx
-                    if textLength != 0 then
-                      elements.addOne(span(value.slice(idx, start)))
-                    elements.addOne(
-                      span(
-                        cls := "hlts-" + what,
-                        value.slice(start, end)
-                      )
-                    )
-                    idx = end
-                  end if
+            highlight.foreach: token =>
+              elements.addOne(
+                span(
+                  sourceCode.slice(token.start, token.finish),
+                  token.kind.map(c => cls := "hlts-" + c.replace('.', '-'))
+                )
+              )
 
             elements.result()
           }
@@ -151,7 +116,7 @@ def annotate[TS <: TreeSitter & Singleton](
   val lines = text.linesIterator.toList.zipWithIndex
   // val annots = captures.groupMap(_.node.startPoint.row)(identity)
   val annots = captures
-    .flatMap(c => c.nodes.map(n => CaptureGroup(c.name(query), n)))
+    .map(c => CaptureGroup(c.name(query), c.node))
     .groupMap(_.node.startPoint.row)(identity)
 
   val allLines = List.newBuilder[String]

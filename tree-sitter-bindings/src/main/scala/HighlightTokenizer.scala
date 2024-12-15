@@ -18,7 +18,7 @@ class HighlightTokenizer[TS <: TreeSitterInterface & Singleton](
         (
           index.resolve(capture.node.startPoint),
           index.resolve(capture.node.endPoint),
-          capture.name(query).replace('.', '-')
+          capture.name(query)
         )
     .sortBy(x => x._2)
 

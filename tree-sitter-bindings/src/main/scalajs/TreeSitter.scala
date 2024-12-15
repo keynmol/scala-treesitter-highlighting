@@ -9,6 +9,7 @@ class TreeSitter(p: Parser.type) extends TreeSitterInterface:
   override opaque type Point = p.Point
   override opaque type Language = p.Language
   override opaque type Node = p.Node
+  override opaque type Match = p.Match
   override opaque type Capture = p.Capture
   override opaque type Query = p.Query
 
@@ -18,15 +19,18 @@ class TreeSitter(p: Parser.type) extends TreeSitterInterface:
   extension (t: Tree) override inline def rootNode = t.rootNode
 
   extension (q: Query)
-    override inline def captures(node: Node): Iterable[Capture] =
-      q.captures(node).toArray
+    override inline def matches(node: Node): Iterable[Match] =
+      q.matches(node).toArray
+
+  extension (m: Match)
+    override inline def captures =
+      m.captures
 
   extension (t: Capture)
     @annotation.targetName("capture_name")
     override inline def name(q: Query): String = t.name
-    override inline def nodes: Iterable[Node] = Arr(t.node)
+    override inline def node = t.node
 
-  // extension (t: Match) inline def name: String = t.name
 
   extension (t: Node)
     override inline def children: Iterable[Node] = t.children.toArray
@@ -57,7 +61,6 @@ private object Parser extends js.Any:
   @js.native
   trait Query extends js.Any:
     def matches(node: Node): Arr[Match] = js.native
-    def captures(node: Node): Arr[Capture] = js.native
 
   @js.native
   trait Tree extends js.Any:
@@ -74,6 +77,7 @@ private object Parser extends js.Any:
   @js.native
   trait Match extends js.Any:
     val name: String = js.native
+    val captures: Arr[Capture] = js.native
 
   @js.native
   trait Capture extends js.Any:
