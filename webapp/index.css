@@ -1,0 +1,13 @@
+#content {
+  margin:auto;
+  padding: 30px;
+  font-size: 15px;
+  font-family: myFirstFont
+}
+
+
+@font-face {
+  font-family: myFirstFont;
+  src: url(/FiraCode-Regular.ttf);
+}
+
