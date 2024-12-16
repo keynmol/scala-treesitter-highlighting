@@ -12,9 +12,12 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: coursier/cache-action@v6.3
       - uses: sbt/setup-sbt@v1
+      - run: sbt --client buildScalaWASM
       - run: cd webapp && npm install && npm run buildForGithubPages
       - name: Publish gh-pages
         if: (github.ref == 'refs/heads/main')
