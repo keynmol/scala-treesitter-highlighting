@@ -1,0 +1,139 @@
+package scala_highlight.lib
+
+import scalanative.unsafe.*
+import ts_highlight.*
+import tree_sitter.structs.TSLanguage
+import scala.util.Using
+import java.io.FileWriter
+import java.io.File
+import java.nio.file.Path
+import ts_highlight.themes.CaptureGroup
+import ts_highlight.themes.{Theme, CaptureGroup}, Theme.*
+
+def tree_sitter_scala(): Ptr[TSLanguage] = extern
+
+object Lib:
+  def highlight_markdown_file(
+      in: Path,
+      out: Option[Path],
+      theme: Option[Theme] = None
+  ) =
+    import cmark.all.*, scalanative.libc
+    Zone:
+      var code =
+        scala.io.Source
+          .fromFile(in.toFile)
+          .getLines()
+          .mkString(System.lineSeparator())
+      val str = toCString(code)
+
+      val node = cmark_parse_document(str, libc.string.strlen(str), 0)
+
+      val lines = code.linesIterator.toList
+
+      val parser = tree_sitter.all.ts_parser_new()
+      val lang = tree_sitter_scala()
+
+      val ts = TreeSitter(parser, lang)
+
+      val mentionedGroups = collection.mutable.Set.empty[CaptureGroup]
+
+      def iterateNodes(node: Ptr[cmark_node]) =
+        val cuts = List.newBuilder[(Int, Int, Array[String])]
+        def go(nd: Ptr[cmark_node]): Unit =
+          val iter = cmark_iter_new(nd)
+          var ev_type: cmark_event_type = cmark_event_type.CMARK_EVENT_NONE
+
+          while {
+              ev_type = cmark_iter_next(iter); ev_type
+            } != cmark_event_type.CMARK_EVENT_DONE
+          do
+            val cur = cmark_iter_get_node(iter)
+            val tpe =
+              cmark_node_get_type(cur) == cmark_node_type.CMARK_NODE_CODE_BLOCK
+
+            if tpe then
+              val fence =
+                fromCString(cmark_node_get_fence_info(cur)).split(" ").toList
+              val code =
+                fromCString(cmark_node_get_literal(cur))
+
+              val shouldReplace =
+                fence match
+                  case List("scala")                          => true
+                  case List("scala", "mdoc")                  => true
+                  case List("scala", "mdoc:compile-only")     => true
+                  case List("scala", "mdoc:reset")            => true
+                  case List("scala", "mdoc:passthrough")      => false
+                  case List("scala", "mdoc:nest:passthrough") => false
+                  case _                                      => false
+
+              if shouldReplace then
+                val lineStart = cmark_node_get_start_line(cur) - 1
+                val columnStart = cmark_node_get_start_column(cur) - 1
+                val lineEnd = cmark_node_get_end_line(cur) - 1
+
+                val highlight = HighlightTokenizer(code, QUERIES, ts)
+
+                val indent = " " * (columnStart + 1)
+
+                val builder = new StringBuilder
+                builder.addAll(indent + "<pre class='ts-hl'><code>\n")
+
+                highlight.tokens.foreach: tok =>
+                  tok.kind.foreach: k =>
+                    CaptureGroup.fromString(k).foreach(mentionedGroups += _)
+
+                  builder.addAll(
+                    s"<span class='${tok.kind.map(k => "ts-hl-" + k.replace('.', '-')).getOrElse("")}'>${code
+                        .slice(tok.start, tok.finish)}</span>"
+                  )
+
+                builder.addAll(s"\n$indent</pre></code>")
+
+                cuts.addOne(
+                  lineStart,
+                  lineEnd,
+                  builder.result().linesIterator.toArray
+                )
+              end if
+            end if
+
+          end while
+
+        end go
+
+        go(node)
+        cuts.result()
+      end iterateNodes
+
+      val cuts = iterateNodes(node).sortBy(_._1).toArray
+      var currentCutIdx = 0
+      inline def currentCut = cuts(currentCutIdx)
+      val content = List.newBuilder[String]
+      lines.zipWithIndex.foreach: (line, idx) =>
+        if currentCutIdx <= cuts.length - 1 then
+          if idx < currentCut._1 then content += line
+          else if idx == currentCut._1 then content.addAll(currentCut._3)
+          else if idx == currentCut._2 then currentCutIdx += 1
+        else content += line
+
+      val result =
+        content.result().mkString(System.lineSeparator()) + theme
+          .map(t => "\n\n" + Theme.buildCSS(t, mentionedGroups.toSet))
+          .map(s => s"<style type = 'text/css'>$s</style>")
+          .getOrElse("")
+
+      out match
+        case None => Some(result)
+        case Some(path) =>
+          Using.resource(FileWriter(path.toFile())): f =>
+            f.write(result)
+            None
+  end highlight_markdown_file
+
+  lazy val QUERIES = io.Source
+    .fromInputStream(getClass().getResourceAsStream("/highlights.scm"))
+    .getLines()
+    .mkString(System.lineSeparator())
+end Lib

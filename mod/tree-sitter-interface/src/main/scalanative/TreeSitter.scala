@@ -1,7 +1,7 @@
 package ts_highlight
 
 import scalanative.unsafe.*
-import treesitter_native.all.*
+import tree_sitter.all.*
 import scala.scalanative.unsigned.*
 
 extension [A: Tag](p: Ptr[A]) private inline def DEREF: A = !p
@@ -55,10 +55,10 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
 
         for i <- 0 until deref.capture_count.toInt do
           val c = deref.captures(i)
-          capturesCopy(i) = !treesitter_native.structs.TSQueryCapture
+          capturesCopy(i) = !tree_sitter.structs.TSQueryCapture
             .apply(c.node, c.index)
 
-        builder += treesitter_native.structs.TSQueryMatch.apply(
+        builder += tree_sitter.structs.TSQueryMatch.apply(
           deref.id,
           deref.pattern_index,
           deref.capture_count,
@@ -74,7 +74,7 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
 
       for i <- 0 until t.DEREF.capture_count.toInt do
         val c = t.DEREF.captures(i)
-        builder += treesitter_native.structs.TSQueryCapture
+        builder += tree_sitter.structs.TSQueryCapture
           .apply(c.node, c.index)
 
       builder.result()
@@ -99,10 +99,10 @@ class TreeSitter(parser: Ptr[TSParser], language: Ptr[TSLanguage])(using
   extension (t: Node)
     override def children: Iterable[Node] =
       val children = Array.newBuilder[Node]
-      val cnt = treesitter_native.functions.ts_node_child_count(t)
+      val cnt = tree_sitter.functions.ts_node_child_count(t)
       for childId <- 0 until cnt.toInt do
         val node = alloc[TSNode]()
-        treesitter_native.functions.ts_node_child(t, childId.toUInt)(node)
+        tree_sitter.functions.ts_node_child(t, childId.toUInt)(node)
         children += node
 
       children.result()

@@ -8,6 +8,9 @@ import js.annotation.*
 import js.Array as Arr
 
 import ts_highlight.*
+import ts_highlight.themes.Theme
+import ts_highlight.themes.CaptureGroup
+import com.raquo.airstream.web.WebStorageVar
 
 @js.native @JSImport("/tree-sitter-scala.wasm?init&url", JSImport.Default)
 val imgUrl: String = js.native
@@ -27,6 +30,25 @@ def show(n: Parser.Node) =
 
 extension [T <: js.Any](t: T) def dump() = console.log(t)
 
+def codeMirrorTextArea(target: Var[String]) =
+  textArea(
+    cls := "border: 1px solid lightgrey; margin:10px;",
+    onInput.mapToValue --> target,
+    value <-- target,
+    onMountCallback(el =>
+      CodeMirror
+        .fromTextArea(
+          el.thisNode.ref,
+          js.Dictionary(
+            "value" -> target.now(),
+            "lineNumbers" -> true,
+            "mode" -> "text/x-scala"
+          )
+        )
+        .on("change", value => target.set(value.getValue()))
+    )
+  )
+
 def app(treesitter: TreeSitter) =
   val lang = treesitter.getLanguage
   val key = "syntax-highlighter-code"
@@ -38,6 +60,12 @@ def app(treesitter: TreeSitter) =
   )
   val annotatedCodeVar = Var("")
   val debugToggled = Var(false)
+  val injectCSS = document.getElementById("inject")
+  val theme = WebStorageVar.localStorage("theme", None).text("kanagawa")
+
+  def opt(v: String, label: String) =
+    option(value := v, label, selected <-- theme.signal.map(_ == v))
+
   div(
     codeVar.signal --> { value =>
       org.scalajs.dom.window.localStorage.setItem(key, value)
@@ -56,21 +84,23 @@ def app(treesitter: TreeSitter) =
       )
     ),
     h2("Scala code:"),
-    textArea(
-      rows := 10,
-      styleAttr := "width: 100%",
-      onInput.mapToValue --> codeVar,
-      value <-- codeVar
+    codeMirrorTextArea(codeVar),
+    select(
+      styleAttr := "padding: 10px; font-size: 1.2rem; background: white; border: 0px; font-weight: bold; margin: 4px;",
+      opt("kanagawa", "Kanagawa"),
+      opt("gruvbox", "Gruvbox"),
+      opt("vscode", "VS Code (dark)"),
+      opt("vscode-light", "VS Code (light)"),
+      onChange.mapToValue --> theme
     ),
-    input(tpe := "checkbox", onClick.mapToChecked --> debugToggled),
-    "Debug?",
+    // input(tpe := "checkbox", onClick.mapToChecked --> debugToggled),
+    // "Debug?",
     div(
       styleAttr := "display: flex",
-      code(
-        styleAttr := "flex: 1",
-        pre(
-          cls := "hlts-container",
-          children <-- codeVar.signal.map { sourceCode =>
+      pre(
+        cls := "ts-hl",
+        code(children <-- codeVar.signal.combineWith(theme.signal).map {
+          (sourceCode, themeName) =>
             val highlight =
               HighlightTokenizer(
                 sourceCode,
@@ -79,18 +109,25 @@ def app(treesitter: TreeSitter) =
               ).tokens.toList
 
             val elements = List.newBuilder[HtmlElement]
+            val theme = Theme.fromString(themeName).get
+            val groups = scala.collection.mutable.Set.empty[CaptureGroup]
 
             highlight.foreach: token =>
+              token.kind.foreach: k =>
+                CaptureGroup.fromString(k).foreach(groups += _)
               elements.addOne(
                 span(
                   sourceCode.slice(token.start, token.finish),
-                  token.kind.map(c => cls := "hlts-" + c.replace('.', '-'))
+                  token.kind.map(c => cls := "ts-hl-" + c.replace('.', '-'))
                 )
               )
 
+            console.log(groups)
+
+            injectCSS.textContent = Theme.buildCSS(theme, groups.toSet)
+
             elements.result()
-          }
-        )
+        })
       ),
       code(
         styleAttr := "background: black; color: white",
