@@ -40,7 +40,7 @@ jobs:
 
       - uses: rui314/setup-mold@v1
 
-      - run: brew install llvm@17
+      - run: brew install llvm@17 ninja autoconf
 
       - name: Build the binary
         run: sbt buildPlatformBinary
