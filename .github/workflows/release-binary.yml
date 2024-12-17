@@ -28,14 +28,14 @@ jobs:
 
       - uses: sbt/setup-sbt@v1
 
-      - name: Cache vcpkg
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/Library/Caches/sbt-vcpkg/vcpkg-install
-            ~/.cache/sbt-vcpkg/vcpkg-install
-            ~/.cache/sbt-vcpkg/vcpkg
-          key: ${{ matrix.OS }}-sbt-vcpkg
+      # - name: Cache vcpkg
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/Library/Caches/sbt-vcpkg/vcpkg-install
+      #       ~/.cache/sbt-vcpkg/vcpkg-install
+      #       ~/.cache/sbt-vcpkg/vcpkg
+      #     key: ${{ matrix.OS }}-sbt-vcpkg
 
       - uses: rui314/setup-mold@v1
 
