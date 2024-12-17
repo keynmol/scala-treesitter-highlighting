@@ -29,7 +29,7 @@ object Theme:
 
   val LightVSCode: Theme = apply:
     case Container =>
-      """background: rgb(255,255,255); color: rgb(0,0,0); padding: 25px;"""
+      """background: rgb(255,255,255); color: rgb(0,0,0); padding: 15px;"""
     case Function => "color: rgb(121,94,38)"
     case Keyword | KeywordFunction | Repeat | Conditional | KeywordOperator |
         KeywordReturn =>
@@ -54,7 +54,7 @@ object Theme:
 
   val VSCode: Theme = apply:
     case Container =>
-      """background: rgb(30,30,30); color: rgb(212,212,212); padding: 25px;"""
+      """background: rgb(30,30,30); color: rgb(212,212,212); padding: 15px;"""
     case Function => "color: rgb(220,220,170)"
     case Keyword | KeywordFunction | Repeat | Conditional | KeywordOperator |
         KeywordReturn =>
@@ -79,7 +79,7 @@ object Theme:
 
   val Gruvbox: Theme = apply:
     case Container =>
-      """background: rgb(40,40,40); color: rgb(213,196,161); padding: 25px;"""
+      """background: rgb(40,40,40); color: rgb(213,196,161); padding: 15px;"""
     case Function => "color: rgb(184,187,38)"
     case Keyword | KeywordFunction | Repeat | Conditional | KeywordOperator |
         KeywordReturn =>
@@ -104,7 +104,7 @@ object Theme:
 
   val Kanagawa: Theme = apply:
     case Container =>
-      """background: rgb(31,31,40); color: white; padding: 25px;"""
+      """background: rgb(31,31,40); color: white; padding: 15px;"""
     case Function => "color: rgb(121, 158, 218)"
     case Keyword | KeywordFunction | Repeat | Conditional | KeywordOperator |
         KeywordReturn =>

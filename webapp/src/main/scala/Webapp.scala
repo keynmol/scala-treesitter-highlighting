@@ -58,6 +58,8 @@ def app(treesitter: TreeSitter) =
   val debugToggled = Var(false)
   val injectCSS = document.getElementById("inject")
   val theme = WebStorageVar.localStorage("theme", None).text("kanagawa")
+  val showHLJS =
+    WebStorageVar.localStorage("show-highlightjs", None).bool(false)
 
   def opt(v: String, label: String) =
     option(value := v, label, selected <-- theme.signal.map(_ == v))
@@ -95,11 +97,10 @@ def app(treesitter: TreeSitter) =
 
   val themeSelector =
     div(
-      cls := "flex flex-row gap-4 items-center m-2",
+      cls := "flex flex-row gap-4 items-center",
       h2("Theme:", cls := "text-2xl"),
       select(
         cls := "text-2xl bg-white border-2 border-sky-700 p-2 text-black bg-sky-100 borde",
-        // styleAttr := "padding: 10px; font-size: 1.2rem; background: white; border: 0px; font-weight: bold; margin: 4px;",
         opt("kanagawa", "Kanagawa"),
         opt("gruvbox", "Gruvbox"),
         opt("vscode", "VS Code (dark)"),
@@ -114,9 +115,15 @@ def app(treesitter: TreeSitter) =
     codeMirrorTextArea(codeVar)
   )
 
+  val highlightJSExample = div(
+    cls("hidden") <-- showHLJS.signal.map(!_),
+    child <-- codeVar.signal.map(code => codeBlock("scala", code))
+  )
+
   val highlightedCode = div(
-    cls := "2xl:w-6/12",
+    cls := "2xl:w-6/12 flex flex-col gap-2",
     themeSelector,
+    h3(cls := "text-2xl", "Tree Sitter highlighting:"),
     pre(
       cls := "ts-hl w-full",
       code(children <-- codeVar.signal.combineWith(theme.signal).map {
@@ -148,7 +155,15 @@ def app(treesitter: TreeSitter) =
 
           elements.result()
       })
-    )
+    ),
+    h3(
+      cls := "text-2xl",
+      child.text <-- showHLJS.signal.map(if _ then "➖" else "➕"),
+      " HighlightJS highlighting:",
+      cls := "cursor-pointer",
+      onClick.mapToValue --> { _ => showHLJS.update(!_) }
+    ),
+    highlightJSExample
   )
 
   div(
@@ -180,7 +195,6 @@ def annotate[TS <: TreeSitter & Singleton](
 ): String =
   case class CaptureGroup(label: String, node: ts.Node)
   val lines = text.linesIterator.toList.zipWithIndex
-  // val annots = captures.groupMap(_.node.startPoint.row)(identity)
   val annots = captures
     .map(c => CaptureGroup(c.name(query), c.node))
     .groupMap(_.node.startPoint.row)(identity)
@@ -209,6 +223,15 @@ def annotate[TS <: TreeSitter & Singleton](
             ) + " " + capture.label.replace('.', '-')
   allLines.result().mkString("\n")
 end annotate
+
+inline def codeBlock(language: String, value: String) =
+  pre(
+    code(
+      cls := s"language-$language",
+      onMountCallback(mnt => hljs.highlightElement(mnt.thisNode.ref)),
+      value
+    )
+  )
 
 @main def hello =
   val interface = TreeSitter(Parser)
