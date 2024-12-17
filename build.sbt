@@ -164,7 +164,8 @@ lazy val bin =
           .withLinkingOptions(_ :+ buildScalaGrammar.value.toString)
           .withEmbedResources(true)
           .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
-          .withResourceIncludePatterns(Seq("**.scm")),
+          .withResourceIncludePatterns(Seq("**.scm"))
+          .withIncrementalCompilation(true),
       Compile / resourceGenerators += Def.task {
         val highlight =
           (ThisBuild / baseDirectory).value / "tree-sitter-scala" / "queries" / "highlights.scm"

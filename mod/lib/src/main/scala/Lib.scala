@@ -72,13 +72,12 @@ object Lib:
                 val lineStart = cmark_node_get_start_line(cur) - 1
                 val columnStart = cmark_node_get_start_column(cur) - 1
                 val lineEnd = cmark_node_get_end_line(cur) - 1
-
                 val highlight = HighlightTokenizer(code, QUERIES, ts)
 
                 val indent = " " * (columnStart + 1)
 
                 val builder = new StringBuilder
-                builder.addAll(indent + "<pre class='ts-hl'><code>\n")
+                builder.addAll("\n\n" + indent + "<pre class='ts-hl'><code>")
 
                 highlight.tokens.foreach: tok =>
                   tok.kind.foreach: k =>
@@ -89,7 +88,7 @@ object Lib:
                         .slice(tok.start, tok.finish)}</span>"
                   )
 
-                builder.addAll(s"\n$indent</pre></code>")
+                builder.addAll(s"</pre></code>\n\n")
 
                 cuts.addOne(
                   lineStart,
@@ -121,7 +120,7 @@ object Lib:
       val result =
         content.result().mkString(System.lineSeparator()) + theme
           .map(t => "\n\n" + Theme.buildCSS(t, mentionedGroups.toSet))
-          .map(s => s"<style type = 'text/css'>$s</style>")
+          .map(s => s"\n\n<style type = 'text/css'>$s</style>\n\n")
           .getOrElse("")
 
       out match

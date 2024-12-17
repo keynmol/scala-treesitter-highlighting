@@ -51,6 +51,10 @@ object Theme:
     case Property                  => "color: rgb(0,16,128);"
     case Spell                     => "color: rgb(96,139,78);"
     case Variable                  => "color: rgb(0,16,128);"
+    case Method                    => "color: rgb(121,94,38)"
+    case Boolean                   => "color: rgb(9,134,88);"
+    case TypeDefinition            => "color: rgb(38,127,153);"
+    case Float                     => "color: rgb(9,134,88);"
 
   val VSCode: Theme = apply:
     case Container =>
@@ -76,6 +80,10 @@ object Theme:
     case Property                  => "color: rgb(156,220,254);"
     case Spell                     => "color: rgb(106,153,85);"
     case Variable                  => "color: rgb(156,220,254);"
+    case Method                    => "color: rgb(220,220,170)"
+    case Boolean                   => "color: rgb(181,206,168);"
+    case TypeDefinition            => "color: rgb(78,201,176);"
+    case Float                     => "color: rgb(181,206,168);"
 
   val Gruvbox: Theme = apply:
     case Container =>
@@ -101,6 +109,8 @@ object Theme:
     case Property                  => "color: rgb(254,128,25);"
     case Spell                     => "color: rgb(146,131,116);"
     case Variable                  => "color: rgb(213,196,161);"
+    case Method                    => "color: rgb(184,187,38)"
+    case Boolean                   => "color: rgb(184,187,38);"
 
   val Kanagawa: Theme = apply:
     case Container =>
@@ -115,10 +125,10 @@ object Theme:
       "color: rgb(151,128,186); text-decoration: underline;"
     case PunctuationBracket        => "color: rgb(154, 172, 203);"
     case PunctuationSpecial        => "color: rgb(127, 180, 202);"
-    case Type                      => "color: rgb(114,169,159);"
+    case Type | TypeDefinition     => "color: rgb(114,169,159);"
     case String                    => "color: rgb(152,187, 108);"
     case FunctionCall | MethodCall => "color: rgb(126, 156, 216)"
-    case Number                    => "color: pink;"
+    case Number | Float            => "color: pink;"
     case Operator                  => "color: rgb(196, 161, 107);"
     case Parameter                 => "color: rgb(184, 181, 209)"
     case Include                   => "color: rgb(228, 104, 118);"
@@ -126,6 +136,10 @@ object Theme:
     case Property                  => "color: rgb(234, 193, 128)"
     case Spell                     => "color: rgb(85,  94, 136)"
     case Variable                  => "color: rgb(192, 202, 245)"
+    case Method                    => "color: rgb(122, 162,247)"
+    case Boolean                   => "color: rgb(258, 158, 100)"
+
+  val x = true
 
   def buildCSS(theme: Theme, mentioned: Set[CaptureGroup]) =
     val sb = new StringBuilder
