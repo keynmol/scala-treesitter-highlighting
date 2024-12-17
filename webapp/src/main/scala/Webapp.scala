@@ -170,7 +170,7 @@ def app(treesitter: TreeSitter) =
     cls := "content mx-auto w-10/12 bg-white/70 p-6 rounded-xl flex flex-col gap-4",
     header,
     div(
-      cls := "flex lg:flex-col 2xl:flex-row gap-4 w-full",
+      cls := "flex md:flex-col sm:flex-col lg:flex-col 2xl:flex-row gap-4 w-full",
       scalaCode,
       highlightedCode
     )
