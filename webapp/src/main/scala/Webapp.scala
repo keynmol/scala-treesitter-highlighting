@@ -32,7 +32,7 @@ extension [T <: js.Any](t: T) def dump() = console.log(t)
 
 def codeMirrorTextArea(target: Var[String]) =
   textArea(
-    cls := "border: 1px solid lightgrey; margin:10px;",
+    cls := "h-full",
     onInput.mapToValue --> target,
     value <-- target,
     onMountCallback(el =>
@@ -51,13 +51,9 @@ def codeMirrorTextArea(target: Var[String]) =
 
 def app(treesitter: TreeSitter) =
   val lang = treesitter.getLanguage
-  val key = "syntax-highlighter-code"
-  val codeVar = Var(
-    org.scalajs.dom.window.localStorage.getItem(key) match
-      case s: String =>
-        s
-      case null => SAMPLE_CODE
-  )
+  val codeVar = WebStorageVar
+    .localStorage("syntax-highlighter-code", None)
+    .text(SAMPLE_CODE)
   val annotatedCodeVar = Var("")
   val debugToggled = Var(false)
   val injectCSS = document.getElementById("inject")
@@ -66,80 +62,113 @@ def app(treesitter: TreeSitter) =
   def opt(v: String, label: String) =
     option(value := v, label, selected <-- theme.signal.map(_ == v))
 
-  div(
-    codeVar.signal --> { value =>
-      org.scalajs.dom.window.localStorage.setItem(key, value)
-    },
-    styleAttr := "width: 80%; margin:auto",
-    h1("Scala syntax highlighter based on TreeSitter"),
+  val basicLink =
+    cls := "text-indigo-600 hover:no-underline underline"
+
+  val header = div(
+    cls := "flex flex-col gap-4",
+    h1("Scala code highlighter", cls := "text-4xl"),
     p(
-      i(
-        "This project is very much a work-in-progress - there are quite obvious bugs and missing niceties."
-      )
+      cls := "text-md",
+      "This highlighter uses the Tree Sitter parser for Scala, compiled to WASM. It is much more accurate than any regex-based engines such as Highlight.js or Textmate grammars"
     ),
     p(
       a(
         "Github",
-        href := "https://github.com/keynmol/scala-treesitter-highlighting"
-      )
-    ),
-    h2("Scala code:"),
-    codeMirrorTextArea(codeVar),
-    select(
-      styleAttr := "padding: 10px; font-size: 1.2rem; background: white; border: 0px; font-weight: bold; margin: 4px;",
-      opt("kanagawa", "Kanagawa"),
-      opt("gruvbox", "Gruvbox"),
-      opt("vscode", "VS Code (dark)"),
-      opt("vscode-light", "VS Code (light)"),
-      onChange.mapToValue --> theme
-    ),
-    // input(tpe := "checkbox", onClick.mapToChecked --> debugToggled),
-    // "Debug?",
-    div(
-      styleAttr := "display: flex",
-      pre(
-        cls := "ts-hl",
-        code(children <-- codeVar.signal.combineWith(theme.signal).map {
-          (sourceCode, themeName) =>
-            val highlight =
-              HighlightTokenizer(
-                sourceCode,
-                highlightQueries,
-                treesitter
-              ).tokens.toList
-
-            val elements = List.newBuilder[HtmlElement]
-            val theme = Theme.fromString(themeName).get
-            val groups = scala.collection.mutable.Set.empty[CaptureGroup]
-
-            highlight.foreach: token =>
-              token.kind.foreach: k =>
-                CaptureGroup.fromString(k).foreach(groups += _)
-              elements.addOne(
-                span(
-                  sourceCode.slice(token.start, token.finish),
-                  token.kind.map(c => cls := "ts-hl-" + c.replace('.', '-'))
-                )
-              )
-
-            console.log(groups)
-
-            injectCSS.textContent = Theme.buildCSS(theme, groups.toSet)
-
-            elements.result()
-        })
+        href := "https://github.com/keynmol/scala-treesitter-highlighting",
+        basicLink
       ),
-      code(
-        styleAttr := "background: black; color: white",
-        display <-- debugToggled.signal.map(
-          if _ then display.block.value else display.none.value
-        ),
-        pre(
-          child.text <-- annotatedCodeVar
-        )
+      " | ",
+      a(
+        "Author",
+        href := "https://blog.indoorvivants.com",
+        basicLink
+      ),
+      " | ",
+      a(
+        "Tree Sitter Scala grammar",
+        href := "https://github.com/tree-sitter/tree-sitter-scala/pulls",
+        basicLink
       )
-    ),
-    ackn
+    )
+  )
+
+  val themeSelector =
+    div(
+      cls := "flex flex-row gap-4 items-center m-2",
+      h2("Theme:", cls := "text-2xl"),
+      select(
+        cls := "text-2xl bg-white border-2 border-sky-700 p-2 text-black bg-sky-100 borde",
+        // styleAttr := "padding: 10px; font-size: 1.2rem; background: white; border: 0px; font-weight: bold; margin: 4px;",
+        opt("kanagawa", "Kanagawa"),
+        opt("gruvbox", "Gruvbox"),
+        opt("vscode", "VS Code (dark)"),
+        opt("vscode-light", "VS Code (light)"),
+        onChange.mapToValue --> theme
+      )
+    )
+
+  val scalaCode = div(
+    cls := "2xl:w-6/12 h-full overflow-auto",
+    h2("Scala code:", cls := "text-2xl"),
+    codeMirrorTextArea(codeVar)
+  )
+
+  val highlightedCode = div(
+    cls := "2xl:w-6/12",
+    themeSelector,
+    pre(
+      cls := "ts-hl w-full",
+      code(children <-- codeVar.signal.combineWith(theme.signal).map {
+        (sourceCode, themeName) =>
+          val highlight =
+            HighlightTokenizer(
+              sourceCode,
+              highlightQueries,
+              treesitter
+            ).tokens.toList
+
+          val elements = List.newBuilder[HtmlElement]
+          val theme = Theme.fromString(themeName).get
+          val groups = scala.collection.mutable.Set.empty[CaptureGroup]
+
+          highlight.foreach: token =>
+            token.kind.foreach: k =>
+              CaptureGroup.fromString(k).foreach(groups += _)
+            elements.addOne(
+              span(
+                sourceCode.slice(token.start, token.finish),
+                token.kind.map(c => cls := "ts-hl-" + c.replace('.', '-'))
+              )
+            )
+
+          console.log(groups)
+
+          injectCSS.textContent = Theme.buildCSS(theme, groups.toSet)
+
+          elements.result()
+      })
+    )
+  )
+
+  div(
+    cls := "content mx-auto w-10/12 bg-white/70 p-6 rounded-xl flex flex-col gap-4",
+    header,
+    div(
+      cls := "flex lg:flex-col 2xl:flex-row gap-4 w-full",
+      scalaCode,
+      highlightedCode
+    )
+
+    // code(
+    //   styleAttr := "background: black; color: white",
+    //   display <-- debugToggled.signal.map(
+    //     if _ then display.block.value else display.none.value
+    //   ),
+    //   pre(
+    //     child.text <-- annotatedCodeVar
+    //   )
+    // )
   )
 end app
 
@@ -180,45 +209,6 @@ def annotate[TS <: TreeSitter & Singleton](
             ) + " " + capture.label.replace('.', '-')
   allLines.result().mkString("\n")
 end annotate
-
-val ackn =
-  div(
-    h2("Acknowledgements", idAttr := "acknowledgements"),
-    p(
-      "Thanks to the current and past contributors to ",
-      a(
-        "Tree Sitter Scala grammar",
-        href := "https://github.com/tree-sitter/tree-sitter-scala"
-      ),
-      ", authors of Tree Sitter itself",
-      ", the author of ",
-      a(
-        "Kanagawa Neovim theme",
-        href := "https://github.com/rebelot/kanagawa.nvim/"
-      ),
-      ", and countless authors and contributors to Scala and JavaSript tooling, without whom this work wouldn't be posislbe"
-    )
-  )
-
-class Index[T <: TreeSitter & Singleton](text: String, val ts: T):
-  val mapping: Map[Int, (Int, String)] =
-    var curOffset = 0
-    val spl = text.split("\n")
-    val result = List.newBuilder[(Int, (Int, String))]
-    for i <- 0 until spl.length
-    do
-      result.addOne(i -> (curOffset, spl(i)))
-      curOffset += spl(i).length() + 1
-
-    result.result().toMap
-  end mapping
-
-  def resolve(point: ts.Point): Int =
-    mapping(point.row) match
-      case (curOffset, _) =>
-        curOffset + point.column
-
-end Index
 
 @main def hello =
   val interface = TreeSitter(Parser)
