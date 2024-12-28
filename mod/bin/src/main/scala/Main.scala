@@ -1,13 +1,10 @@
 package scala_highlight.bin
 
-import scala_highlight.lib.Lib
-
 import mainargs.{main, arg, ParserForMethods, Flag}
 import java.nio.file.Path
-import scala_highlight.lib.Lib.highlight_markdown_file
 import java.nio.file.Paths
 import ts_highlight.themes.Theme
-import scala_highlight.lib.Lib.highlight_scala_snippet
+import scala_highlight.lib.*
 
 object Main:
   @main
@@ -18,16 +15,16 @@ object Main:
       out: Option[String] = None,
       @arg(doc = "Theme")
       theme: Option[String] = None
-  ) = highlight_markdown_file(
-    Paths.get(in),
-    out.map(Paths.get(_)),
-    theme.flatMap(Theme.fromString)
-  )
-    .foreach(println)
+  ) =
+    highlight_markdown_file(
+      Paths.get(in),
+      out.map(Paths.get(_)),
+      theme.flatMap(Theme.fromString)
+    ).foreach(println)
   end markdown
 
   @main
-  def image(
+  def code(
       @arg(doc = "Scala snippet")
       in: String,
       @arg(doc = "Output image")
@@ -41,6 +38,24 @@ object Main:
         .getLines()
         .mkString(System.lineSeparator())
       println(highlight_scala_snippet(contents))
+
+  @main
+  def image(
+      @arg(doc = "Scala snippet")
+      in: String,
+      @arg(doc = "Theme")
+      theme: Option[String] = None,
+      @arg()
+      fontSize: Int = 50
+  ) =
+    if in == "-" then
+      val contents = scala.io.Source
+        .fromInputStream(System.in)
+        .getLines()
+        .mkString(System.lineSeparator())
+      val tokens = highlight_scala_snippet(contents).toList
+
+      generate_image(contents, tokens, FONT_SIZE = fontSize)
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 end Main

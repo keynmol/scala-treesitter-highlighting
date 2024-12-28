@@ -118,7 +118,7 @@ object Theme:
     case TypeQualifier =>
       rgb"251,73,52".text.underline
     case PunctuationBracket =>
-      rgb"168,153,132".text // "color: rgb(168,153,132);"
+      rgb"168,153,132".text
     case PunctuationSpecial        => rgb"254,128,25".text
     case Type                      => rgb"250,189,47".text
     case String                    => rgb"184,187,38".text
@@ -147,6 +147,7 @@ object Theme:
       rgb"151,128,186".text.underline
     case PunctuationBracket        => rgb"154, 172, 203".text
     case PunctuationSpecial        => rgb"127, 180, 202".text
+    case PunctuationDelimiter      => rgb"#ff0000".text
     case Type | TypeDefinition     => rgb"114, 169, 159".text
     case String                    => rgb"152, 187, 108".text
     case FunctionCall | MethodCall => rgb"126, 156, 216".text
