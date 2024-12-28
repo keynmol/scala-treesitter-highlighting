@@ -59,11 +59,14 @@ def generate_image(
   cairo.setColor(rgb"#1f1f28")
   cairo_paint(cairo)
 
-  val summary = size_text(cairo, contents, tokens, 10f, Theme.Kanagawa)
+  val summary = size_text(cairo, contents, tokens, 20f, Theme.Kanagawa)
 
   // cairo.setColor(rgb"#ffffff")
   // cairo_rectangle(cairo, PADDING, PADDING, summary.width, summary.height)
   // cairo_stroke(cairo)
+
+  println(summary.width)
+  println(summary.height)
 
   Zone:
     summary.tokens.foreach: token =>
@@ -121,7 +124,7 @@ def size_text(
 
   var curLineBreak = 0
 
-  val baseLine = c"h"
+  val baseLine = c"P"
 
   val fallbackColor = theme(Container).text.getOrElse(rgb"#ffffff")
   var lineWidth = 0.0
@@ -140,11 +143,7 @@ def size_text(
       val color = cg.map(theme.apply).flatMap(_.text).getOrElse(fallbackColor)
       val text = str.slice(token.start, token.finish)
 
-      cairo_text_extents(
-        cairo,
-        if text.trim.isEmpty then baseLine else toCString(text.replace(' ', '_')),
-        extents
-      )
+      cairo_text_extents(cairo, toCString(text.replace(' ', '@')), extents)
 
       if lineBreaks.nonEmpty && curLineBreak < lineBreaks.length then
         if token.start > lineBreaks(curLineBreak) then
@@ -154,38 +153,20 @@ def size_text(
           lineWidth = 0
       end if
 
-      // height += (!extents).height.toFloat
-      // width = width.max((!extents).width.toFloat)
 
-      if text.trim.nonEmpty then 
+      if text.trim.nonEmpty then
         positionedTokens += PositionedToken(
           text,
           x = lineWidth,
           y = height,
           color = color
         )
+        lineWidth += ((!extents).width).max((!baseExtents).width * text.length)
+      else lineWidth += text.count(_.isWhitespace) * (!baseExtents).width
 
-      lineWidth += (!extents).width
 
-    // Zone:
-    //   for (line, i) <- str.linesIterator.zipWithIndex do
+    width = width.max(lineWidth)
+    height += (!baseExtents).height + lineSpacing
 
-    //     cairo_text_extents(
-    //       cairo,
-    //       if line.isEmpty then baseLine else toCString(line),
-    //       extents
-    //     )
-
-    //     if i != 0 then height += lineSpacing
-
-    //     width = width.max((!extents).width.toFloat)
-    //     lines += PositionedToken(
-    //       x = 0,
-    //       y = height,
-    //       str = line,
-    //       color = theme(CaptureGroup.String).text.getOrElse(rgb"#ffffff")
-    //     )
-    //     height += (!extents).height.toFloat
-    //   end for
     Summary(width, height, positionedTokens.result())
 end size_text
