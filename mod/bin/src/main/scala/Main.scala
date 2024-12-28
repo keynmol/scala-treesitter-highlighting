@@ -7,6 +7,7 @@ import java.nio.file.Path
 import scala_highlight.lib.Lib.highlight_markdown_file
 import java.nio.file.Paths
 import ts_highlight.themes.Theme
+import scala_highlight.lib.Lib.highlight_scala_snippet
 
 object Main:
   @main
@@ -24,6 +25,22 @@ object Main:
   )
     .foreach(println)
   end markdown
+
+  @main
+  def image(
+      @arg(doc = "Scala snippet")
+      in: String,
+      @arg(doc = "Output image")
+      out: Option[String] = None,
+      @arg(doc = "Theme")
+      theme: Option[String] = None
+  ) =
+    if in == "-" then
+      val contents = scala.io.Source
+        .fromInputStream(System.in)
+        .getLines()
+        .mkString(System.lineSeparator())
+      println(highlight_scala_snippet(contents))
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 end Main

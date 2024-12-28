@@ -95,6 +95,7 @@ lazy val themes = projectMatrix
   .jsPlatform(Seq(Versions.Scala3_LTS))
   .nativePlatform(Seq(Versions.Scala3_LTS))
   .settings(
+  libraryDependencies += "org.typelevel" %%% "literally" % "1.2.0",
     // This source generator extracts all the highlight capture groups
     // and generats a Scala enum
     Compile / sourceGenerators += Def.task {

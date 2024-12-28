@@ -7,3 +7,6 @@
   src: url(/FiraCode-Regular.ttf);
 }
 
+pre.ts-hl {
+  padding: 15px;
+}

@@ -120,7 +120,9 @@ object Lib:
       val result =
         content.result().mkString(System.lineSeparator()) + theme
           .map(t => "\n\n" + Theme.buildCSS(t, mentionedGroups.toSet))
-          .map(s => s"\n\n<style type = 'text/css'>$s</style>\n\n")
+          .map(s =>
+            s"\n\n<style type = 'text/css'>pre.ts-hl{padding: 15px}\n$s</style>\n\n"
+          )
           .getOrElse("")
 
       out match
@@ -130,6 +132,15 @@ object Lib:
             f.write(result)
             None
   end highlight_markdown_file
+
+  def highlight_scala_snippet(snippet: String) =
+    Zone:
+      val parser = tree_sitter.all.ts_parser_new()
+      val lang = tree_sitter_scala()
+      val ts = TreeSitter(parser, lang)
+      val highlight = HighlightTokenizer(snippet, QUERIES, ts)
+
+      println(highlight.tokens.toList)
 
   lazy val QUERIES = io.Source
     .fromInputStream(getClass().getResourceAsStream("/highlights.scm"))
