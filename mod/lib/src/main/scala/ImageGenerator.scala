@@ -137,36 +137,54 @@ def size_text(
 
   println(lineBreaks.toList)
 
+  inline def handleToken(text: String, color: Color)(using Zone) =
+    cairo_text_extents(cairo, toCString(text.replace(' ', '@')), extents)
+
+    if text.trim.nonEmpty then
+      positionedTokens += PositionedToken(
+        text,
+        x = lineWidth,
+        y = height,
+        color = color
+      )
+      lineWidth += ((!extents).width).max((!baseExtents).width * text.length)
+    else lineWidth += text.count(_.isWhitespace) * (!baseExtents).width
+  end handleToken
+
+  extension (d: String)
+    def splitWithDelimiters(s: Char) =
+      val sb = new StringBuilder
+      val segments = List.newBuilder[String]
+      val ds = s.toString
+      d.foreach: c =>
+        if c == s then
+          if sb.length != 0 then
+            segments += sb.result
+            sb.clear()
+          end if
+          segments += ds
+        else sb.addOne(c)
+
+      if sb.length > 0 then segments += sb.result
+
+      segments.result
+
   Zone:
     tokens.foreach: token =>
       val cg = token.kind.flatMap(CaptureGroup.fromString)
       val color = cg.map(theme.apply).flatMap(_.text).getOrElse(fallbackColor)
       val text = str.slice(token.start, token.finish)
 
-      cairo_text_extents(cairo, toCString(text.replace(' ', '@')), extents)
-
-      if lineBreaks.nonEmpty && curLineBreak < lineBreaks.length then
-        if token.start > lineBreaks(curLineBreak) then
-          curLineBreak += 1
-          width = width.max(lineWidth)
-          height += (!baseExtents).height + lineSpacing
-          lineWidth = 0
-      end if
-
-
-      if text.trim.nonEmpty then
-        positionedTokens += PositionedToken(
-          text,
-          x = lineWidth,
-          y = height,
-          color = color
-        )
-        lineWidth += ((!extents).width).max((!baseExtents).width * text.length)
-      else lineWidth += text.count(_.isWhitespace) * (!baseExtents).width
-
-
-    width = width.max(lineWidth)
-    height += (!baseExtents).height + lineSpacing
+      text
+        .splitWithDelimiters('\n')
+        .foreach:
+          case "\n" =>
+            curLineBreak += 1
+            width = width.max(lineWidth)
+            height += (!baseExtents).height + lineSpacing
+            lineWidth = 0
+          case other =>
+            handleToken(other, color)
 
     Summary(width, height, positionedTokens.result())
 end size_text
