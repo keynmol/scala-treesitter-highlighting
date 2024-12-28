@@ -19,6 +19,7 @@ extension (c: Ptr[cairo_t])
 def generate_image(
     contents: String,
     tokens: List[HighlightToken],
+    theme: Theme,
     FONT_SIZE: Int = 50,
     PADDING: Int = 50
 ) =
@@ -55,10 +56,11 @@ def generate_image(
   cairo_set_font_size(cairo, FONT_SIZE)
 
   // Background
-  cairo.setColor(rgb"#1f1f28")
+  theme(Container).background.foreach: c =>
+    cairo.setColor(c)
   cairo_paint(cairo)
 
-  val summary = size_text(cairo, contents, tokens, 20f, Theme.VSCode)
+  val summary = size_text(cairo, contents, tokens, 20f, theme)
 
   Zone:
     summary.tokens.foreach: token =>

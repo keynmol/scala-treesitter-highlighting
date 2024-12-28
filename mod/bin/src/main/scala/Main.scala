@@ -44,7 +44,7 @@ object Main:
       @arg(doc = "Scala snippet")
       in: String,
       @arg(doc = "Theme")
-      theme: Option[String] = None,
+      theme: String = "kanagawa",
       @arg()
       fontSize: Int = 50
   ) =
@@ -54,8 +54,10 @@ object Main:
         .getLines()
         .mkString(System.lineSeparator())
       val tokens = highlight_scala_snippet(contents).toList
+      val th =
+        Theme.fromString(theme).getOrElse(sys.error(s"Unknown theme `$theme`"))
 
-      generate_image(contents, tokens, FONT_SIZE = fontSize)
+      generate_image(contents, tokens, th, FONT_SIZE = fontSize)
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 end Main
