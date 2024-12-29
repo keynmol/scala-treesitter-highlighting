@@ -43,6 +43,8 @@ object Main:
   def image(
       @arg(doc = "Scala snippet")
       in: String,
+      @arg(doc = "Output PNG file location")
+      out: String,
       @arg(doc = "Theme")
       theme: String = "kanagawa",
       @arg()
@@ -63,7 +65,13 @@ object Main:
     val th =
       Theme.fromString(theme).getOrElse(sys.error(s"Unknown theme `$theme`"))
 
-    generate_image(contents, tokens, th, FONT_SIZE = fontSize)
+    generate_image(
+      contents = contents,
+      tokens = tokens,
+      theme = th,
+      out = out,
+      FONT_SIZE = fontSize
+    )
   end image
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)

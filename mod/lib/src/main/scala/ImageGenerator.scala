@@ -29,6 +29,7 @@ def generate_image(
     contents: String,
     tokens: List[HighlightToken],
     theme: Theme,
+    out: String,
     FONT_SIZE: Int = 50,
     PADDING: Int = 50
 ) =
@@ -96,8 +97,9 @@ def generate_image(
   cairo_set_source_surface(newCairo, surface, 0, 0)
 
   cairo_paint(newCairo)
-
-  cairo_surface_write_to_png(newSurface, c"colored_scala_output.png")
+  
+  Zone:
+    cairo_surface_write_to_png(newSurface, toCString(out))
 
 end generate_image
 
