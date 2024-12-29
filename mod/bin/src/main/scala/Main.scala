@@ -48,16 +48,23 @@ object Main:
       @arg()
       fontSize: Int = 50
   ) =
-    if in == "-" then
-      val contents = scala.io.Source
-        .fromInputStream(System.in)
-        .getLines()
-        .mkString(System.lineSeparator())
-      val tokens = highlight_scala_snippet(contents).toList
-      val th =
-        Theme.fromString(theme).getOrElse(sys.error(s"Unknown theme `$theme`"))
+    val contents =
+      if in == "-" then
+        scala.io.Source
+          .fromInputStream(System.in)
+          .getLines()
+          .mkString(System.lineSeparator())
+      else
+        scala.io.Source
+          .fromFile(Paths.get(in).toFile())
+          .getLines()
+          .mkString(System.lineSeparator())
+    val tokens = highlight_scala_snippet(contents).toList
+    val th =
+      Theme.fromString(theme).getOrElse(sys.error(s"Unknown theme `$theme`"))
 
-      generate_image(contents, tokens, th, FONT_SIZE = fontSize)
+    generate_image(contents, tokens, th, FONT_SIZE = fontSize)
+  end image
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 end Main

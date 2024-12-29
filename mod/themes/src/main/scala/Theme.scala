@@ -34,7 +34,9 @@ extension (c: Color)
 object Theme:
   def apply(f: PartialFunction[CaptureGroup | Container, Style]): Theme =
     new Theme:
-      export f.{apply, isDefinedAt}
+      // export f.{apply, isDefinedAt}
+      override def apply(v1: CaptureGroup | Container): Style = if isDefinedAt(v1) then f(v1) else sys.error(s"Match error! $v1")
+      override def isDefinedAt(x: CaptureGroup | Container): Boolean = f.isDefinedAt(x)
 
   opaque type Container = Unit
   val Container: Container = ()
@@ -64,7 +66,7 @@ object Theme:
     case Type                      => rgb"38,127,153".text
     case String                    => rgb"163,21,21".text
     case FunctionCall | MethodCall => rgb"121,94,38".text
-    case Number                    => rgb"9,134,88".text
+    case Number | Float            => rgb"9,134,88".text
     case Operator                  => rgb"0,0,0".text
     case Parameter                 => rgb"0,16,128".text
     case Include                   => rgb"0,0,255".text
@@ -75,7 +77,6 @@ object Theme:
     case Method                    => rgb"121,94,38".text
     case Boolean                   => rgb"9,134,88".text
     case TypeDefinition            => rgb"38,127,153".text
-    case Float                     => rgb"9,134,88".text
 
   val VSCode: Theme = apply:
     case Container =>
@@ -93,7 +94,7 @@ object Theme:
     case Type                      => rgb"78,201,176".text
     case String                    => rgb"206,145,120".text
     case FunctionCall | MethodCall => rgb"220,220,170".text
-    case Number                    => rgb"181,206,168".text
+    case Number | Float            => rgb"181,206,168".text
     case Operator                  => rgb"212,212,212".text
     case Parameter                 => rgb"156,220,254".text
     case Include                   => rgb"197,134,192".text
@@ -104,7 +105,6 @@ object Theme:
     case Method                    => rgb"220,220,170".text
     case Boolean                   => rgb"181,206,168".text
     case TypeDefinition            => rgb"78,201,176".text
-    case Float                     => rgb"181,206,168".text
 
   val Gruvbox: Theme = apply:
     case Container =>
@@ -161,8 +161,6 @@ object Theme:
     case Variable                  => rgb"192,202,245".text
     case Method                    => rgb"122,162,247".text
     case Boolean                   => rgb"255,160,102".text
-
-  val x = true
 
   def buildCSS(theme: Theme, mentioned: Set[CaptureGroup]) =
     val sb = new StringBuilder

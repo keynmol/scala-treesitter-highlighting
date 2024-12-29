@@ -1,3 +1,4 @@
+import scala.scalanative.build.SourceLevelDebuggingConfig
 import scala.scalanative.build.LTO
 import org.scalajs.linker.interface.ModuleSplitStyle
 import sbt.nio.file.FileTreeView
@@ -171,7 +172,8 @@ lazy val bin =
           .withEmbedResources(true)
           .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
           .withResourceIncludePatterns(Seq("**.scm", "**.ttf"))
-          .withIncrementalCompilation(true),
+          .withIncrementalCompilation(true)
+          .withSourceLevelDebuggingConfig(SourceLevelDebuggingConfig.enabled),
       Compile / resourceGenerators += Def.task {
         val highlight =
           (ThisBuild / baseDirectory).value / "tree-sitter-scala" / "queries" / "highlights.scm"

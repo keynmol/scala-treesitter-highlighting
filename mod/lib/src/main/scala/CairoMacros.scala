@@ -2,10 +2,8 @@ package scala_highlight.lib
 
 import scala.quoted.*
 import scalanative.unsafe.fromCString
-// import cairo.all.{FT_Error, FT_Error_String}
 import cairo.aliases.FT_Error
 import cairo.functions.FT_Error_String
-
 
 inline def check(inline expr: => FT_Error): FT_Error = ${ checkImpl('expr) }
 
