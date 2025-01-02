@@ -36,12 +36,10 @@ inThisBuild(
 
 val Versions =
   new {
-    val Scala3_LTS =
-      "3.3.4"
-    val Scala3_Next =
-      "3.6.2"
-    val Laminar =
-      "17.2.0"
+    val Scala3_LTS = "3.3.4"
+    val Scala3_Next = "3.6.2"
+    val Laminar = "17.2.0"
+    val Munit = "1.0.3"
   }
 
 lazy val root =
@@ -77,8 +75,40 @@ lazy val treesitterInterface =
     .in(file("mod/tree-sitter-interface"))
     .dependsOn(treesitterBindings)
     .jsPlatform(Seq(Versions.Scala3_LTS))
-    .nativePlatform(Seq(Versions.Scala3_LTS))
+    .nativePlatform(
+      Seq(Versions.Scala3_LTS),
+      Seq.empty,
+      _.enablePlugins(VcpkgNativePlugin)
+    )
     .settings(moduleName := "treesitter-interface")
+    .settings(
+      libraryDependencies += "org.scalameta" %%% "munit" % Versions.Munit,
+      vcpkgDependencies := VcpkgDependencies("tree-sitter"),
+      Test / nativeConfig :=
+        nativeConfig.value
+          .withLinkingOptions(_ :+ buildScalaGrammar.value.toString)
+          .withEmbedResources(true)
+          .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
+          // .withResourceIncludePatterns(Seq("**.scm"))
+          .withIncrementalCompilation(true)
+          .withSourceLevelDebuggingConfig(SourceLevelDebuggingConfig.enabled),
+      Test / resourceGenerators += Def.task {
+        val highlight =
+          (ThisBuild / baseDirectory).value / "tree-sitter-scala" / "queries" / "highlights.scm"
+
+        val highlightDest =
+          (Compile / managedResourceDirectories).value.head / "highlights.scm"
+
+        val t =
+          FileFunction.cached(streams.value.cacheDirectory / "bin-resources") {
+            (files: Set[File]) =>
+              IO.copyFile(highlight, highlightDest)
+              Set(highlightDest)
+          }
+
+        t(Set(highlight)).toSeq
+      }
+    )
 
 lazy val lib =
   project

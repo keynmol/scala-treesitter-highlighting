@@ -12,7 +12,7 @@ class HighlightTokenizer[TS <: TreeSitterInterface & Singleton](
   private lazy val query = lang.query(highlightQueries)
   private lazy val matches = query.matches(tree.rootNode)
 
-  private lazy val switches: List[(Int, Int, String)] = matches.toList
+  lazy val switches: List[(Int, Int, String)] = matches.toList
     .flatMap: m =>
       m.captures.map: capture =>
         (
@@ -20,26 +20,52 @@ class HighlightTokenizer[TS <: TreeSitterInterface & Singleton](
           index.resolve(capture.node.endPoint),
           capture.name(query)
         )
-    .sortBy(x => x._2)
 
   lazy val tokens: Array[HighlightToken] =
-    val builder = Array.newBuilder[HighlightToken]
+    val sortedSwitches =
+      switches.zipWithIndex.sortBy(sw => sw._1._1 -> sw._2).map(_._1)
 
-    var idx = 0
-    switches
-      .foreach:
-        case (start, end, what) =>
-          if idx <= start then
-            val textLength = start - idx
-            if textLength != 0 then
-              builder.addOne(HighlightToken(idx, start, None))
-            builder.addOne(
-              HighlightToken(start, end, Some(what))
-            )
-            idx = end
-          end if
-    builder.result()
+    val breakpoints = Vector.newBuilder[Int]
+
+    sortedSwitches.headOption.foreach: (start, _, _) =>
+      if start != 0 then breakpoints += 0
+
+    sortedSwitches.foreach: (start, _end, group) =>
+      breakpoints += start
+      breakpoints += _end
+
+    sortedSwitches.lastOption.foreach: (__, end, _) =>
+      if end != source.length - 1 then breakpoints += source.length - 1
+
+    val points = breakpoints.result().distinct.sorted
+
+    if points.length < 2 then Array.empty
+    else
+      /** WARNING: this is very slow.
+        *
+        * It performs a linear search for each interval. It's probably just fast
+        * enough for most snippets, but it won't be winning any benchmark
+        * prizes. We need something like an interval tree (a self balancing one,
+        * and not sensitive to overlaps).
+        */
+      points
+        .sliding(2)
+        .toVector
+        .map:
+          case Vector(start, end) =>
+            val g = sortedSwitches
+              .filter((groupStart, groupEnd, group) =>
+                groupStart <= start && groupEnd >= end
+              )
+              .sortBy((groupStart, groupEnd, _) =>
+                (start - groupStart, groupEnd - end)
+              )
+              .headOption
+            HighlightToken(start, end, g.map(_._3))
+        .toArray
+    end if
   end tokens
+
 end HighlightTokenizer
 
 private class Index[T <: TreeSitterInterface & Singleton](
