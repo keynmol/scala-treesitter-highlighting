@@ -1,3 +1,4 @@
+import scala.scalanative.build.SourceLevelDebuggingConfig
 import scala.scalanative.build.LTO
 import org.scalajs.linker.interface.ModuleSplitStyle
 import sbt.nio.file.FileTreeView
@@ -83,7 +84,12 @@ lazy val lib =
   project
     .in(file("mod/lib"))
     .enablePlugins(ScalaNativePlugin)
-    .dependsOn(treesitterInterface.native(true), cmark, themes.native(true))
+    .dependsOn(
+      treesitterInterface.native(true),
+      cmark,
+      themes.native(true),
+      cairo
+    )
     .settings(
       publish / skip := true,
       publishLocal / skip := true,
@@ -95,6 +101,7 @@ lazy val themes = projectMatrix
   .jsPlatform(Seq(Versions.Scala3_LTS))
   .nativePlatform(Seq(Versions.Scala3_LTS))
   .settings(
+    libraryDependencies += "org.typelevel" %%% "literally" % "1.2.0",
     // This source generator extracts all the highlight capture groups
     // and generats a Scala enum
     Compile / sourceGenerators += Def.task {
@@ -158,21 +165,36 @@ lazy val bin =
       publishLocal / skip := true,
       scalaVersion := Versions.Scala3_Next,
       libraryDependencies += "com.lihaoyi" %%% "mainargs" % "0.7.6",
-      vcpkgDependencies := VcpkgDependencies("tree-sitter", "cmark"),
+      vcpkgDependencies := VcpkgDependencies("tree-sitter", "cmark", "cairo"),
       nativeConfig :=
         nativeConfig.value
           .withLinkingOptions(_ :+ buildScalaGrammar.value.toString)
           .withEmbedResources(true)
           .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
-          .withResourceIncludePatterns(Seq("**.scm"))
-          .withIncrementalCompilation(true),
+          .withResourceIncludePatterns(Seq("**.scm", "**.ttf"))
+          .withIncrementalCompilation(true)
+          .withSourceLevelDebuggingConfig(SourceLevelDebuggingConfig.enabled),
       Compile / resourceGenerators += Def.task {
         val highlight =
           (ThisBuild / baseDirectory).value / "tree-sitter-scala" / "queries" / "highlights.scm"
-        val dest =
+
+        val font = (webapp / baseDirectory).value / "FiraCode-Regular.ttf"
+
+        val highlightDest =
           (Compile / managedResourceDirectories).value.head / "highlights.scm"
-        IO.copyFile(highlight, dest)
-        Seq(dest)
+
+        val fontDest =
+          (Compile / managedResourceDirectories).value.head / "cairo.ttf"
+
+        val t =
+          FileFunction.cached(streams.value.cacheDirectory / "bin-resources") {
+            (files: Set[File]) =>
+              IO.copyFile(highlight, highlightDest)
+              IO.copyFile(font, fontDest)
+              Set(highlightDest, fontDest)
+          }
+
+        t(Set(highlight, font)).toSeq
       }
     )
     .settings(configurePlatform())
@@ -198,6 +220,27 @@ lazy val cmark =
               )
               .toList
           )
+      }
+    )
+    .settings(bindgenSettings)
+    .settings(configurePlatform())
+
+lazy val cairo =
+  project
+    .in(file("mod/cairo-bindings"))
+    .enablePlugins(ScalaNativePlugin, BindgenPlugin, VcpkgNativePlugin)
+    .settings(
+      publish / skip := true,
+      publishLocal / skip := true,
+      scalaVersion := Versions.Scala3_LTS,
+      vcpkgDependencies := VcpkgDependencies("cairo"),
+      bindgenBindings += {
+        Binding(baseDirectory.value / "amalgam.h", "cairo")
+          .withCImports(List("cairo.h", "cairo-ft.h"))
+          .withClangFlags(
+            vcpkgConfigurator.value.pkgConfig.compilationFlags("cairo")
+          )
+          .withOpaqueStructs(Set("FT_ListNodeRec_", "FT_GlyphSlotRec_"))
       }
     )
     .settings(bindgenSettings)
