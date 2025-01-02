@@ -11,33 +11,29 @@ object Main:
   def markdown(
       @arg(doc = "Input markdown file")
       in: String,
-      @arg(doc = "Output markdown file")
+      @arg(doc = "Output markdown file (when not provided, print to stdout)")
       out: Option[String] = None,
       @arg(doc = "Theme")
-      theme: Option[String] = None
+      theme: String = "kanagawa"
   ) =
+    val contents =
+      if in == "-" then
+        scala.io.Source
+          .fromInputStream(System.in)
+          .getLines()
+          .mkString(System.lineSeparator())
+      else
+        scala.io.Source
+          .fromFile(Paths.get(in).toFile)
+          .getLines()
+          .mkString(System.lineSeparator())
+
     highlight_markdown_file(
-      Paths.get(in),
+      contents,
       out.map(Paths.get(_)),
-      theme.flatMap(Theme.fromString)
+      Theme.fromString(theme)
     ).foreach(println)
   end markdown
-
-  @main
-  def code(
-      @arg(doc = "Scala snippet")
-      in: String,
-      @arg(doc = "Output image")
-      out: Option[String] = None,
-      @arg(doc = "Theme")
-      theme: Option[String] = None
-  ) =
-    if in == "-" then
-      val contents = scala.io.Source
-        .fromInputStream(System.in)
-        .getLines()
-        .mkString(System.lineSeparator())
-      println(highlight_scala_snippet(contents))
 
   @main
   def image(

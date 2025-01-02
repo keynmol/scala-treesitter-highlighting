@@ -15,17 +15,12 @@ import scala_highlight.lib.Resources.QUERIES
 def tree_sitter_scala(): Ptr[TSLanguage] = extern
 
 def highlight_markdown_file(
-    in: Path,
+    code: String,
     out: Option[Path],
     theme: Option[Theme] = None
 ) =
   import cmark.all.*, scalanative.libc
   Zone:
-    var code =
-      scala.io.Source
-        .fromFile(in.toFile)
-        .getLines()
-        .mkString(System.lineSeparator())
     val str = toCString(code)
 
     val node = cmark_parse_document(str, libc.string.strlen(str), 0)
