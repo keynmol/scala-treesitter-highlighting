@@ -2,9 +2,10 @@
 
 [**Live version**](https://keynmol.github.io/scala-treesitter-highlighting/)
 
-This WIP project is a space for exploring the usage of Tree Sitter for in-browser syntax highlighting, made possible by [web-tree-sitter](https://www.npmjs.com/package/web-tree-sitter?activeTab=readme) bindings, and the ability to compile Tree Sitter Scala parser to WASM.
+ade possible by [web-tree-sitter](https://www.npmjs.com/package/web-tree-sitter?activeTab=readme) bindings, and the ability to compile Tree Sitter Scala parser to WASM.
 
-![CleanShot 2024-05-26 at 11 21 56](https://github.com/keynmol/scala-treesitter-highlighting/assets/1052965/fda39176-c77e-4922-b7a8-5e96f4ad7d3e)
+![CleanShot 2025-04-03 at 14 33 07@2x](https://github.com/user-attachments/assets/e82f19cf-c714-4116-9ddd-f6b0e1f195df)
+
 
 ## Contributing
 
