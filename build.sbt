@@ -36,17 +36,16 @@ inThisBuild(
 
 val Versions =
   new {
-    val Scala3_LTS = "3.3.4"
-    val Scala3_Next = "3.6.2"
-    val Laminar = "17.2.0"
-    val Munit = "1.0.3"
+    val Scala = "3.7.0"
+    val Laminar = "17.2.1"
+    val Munit = "1.1.0"
   }
 
 lazy val root =
   project
     .in(file("."))
     .aggregate(webapp)
-    .aggregate(treesitterInterface.projectRefs *)
+    .aggregate(treesitterInterface.projectRefs*)
     .aggregate(treesitterBindings)
     .aggregate(cmark)
     .aggregate(lib, bin)
@@ -59,7 +58,7 @@ lazy val webapp =
     .dependsOn(treesitterInterface.js(true), themes.js(true))
     .settings(publish / skip := true, publishLocal / skip := true)
     .settings(
-      scalaVersion := Versions.Scala3_Next,
+      scalaVersion := Versions.Scala,
       scalaJSUseMainModuleInitializer := true,
       scalaJSLinkerConfig ~= {
         _.withModuleKind(ModuleKind.ESModule)
@@ -74,9 +73,9 @@ lazy val treesitterInterface =
   projectMatrix
     .in(file("mod/tree-sitter-interface"))
     .dependsOn(treesitterBindings)
-    .jsPlatform(Seq(Versions.Scala3_LTS))
+    .jsPlatform(Seq(Versions.Scala))
     .nativePlatform(
-      Seq(Versions.Scala3_LTS),
+      Seq(Versions.Scala),
       Seq.empty,
       _.enablePlugins(VcpkgNativePlugin)
     )
@@ -123,13 +122,13 @@ lazy val lib =
     .settings(
       publish / skip := true,
       publishLocal / skip := true,
-      scalaVersion := Versions.Scala3_Next
+      scalaVersion := Versions.Scala
     )
 
 lazy val themes = projectMatrix
   .in(file("mod/themes"))
-  .jsPlatform(Seq(Versions.Scala3_LTS))
-  .nativePlatform(Seq(Versions.Scala3_LTS))
+  .jsPlatform(Seq(Versions.Scala))
+  .nativePlatform(Seq(Versions.Scala))
   .settings(
     libraryDependencies += "org.typelevel" %%% "literally" % "1.2.0",
     // This source generator extracts all the highlight capture groups
@@ -193,8 +192,9 @@ lazy val bin =
     .settings(
       publish / skip := true,
       publishLocal / skip := true,
-      scalaVersion := Versions.Scala3_Next,
-      libraryDependencies += "com.lihaoyi" %%% "mainargs" % "0.7.6",
+      scalaVersion := Versions.Scala,
+      libraryDependencies += "com.indoorvivants" %%% "decline-derive" % "0.3.1",
+      libraryDependencies += "com.indoorvivants" %%% "mcp" % "0.0.8",
       vcpkgDependencies := VcpkgDependencies("tree-sitter", "cmark", "cairo"),
       nativeConfig :=
         nativeConfig.value
@@ -236,7 +236,7 @@ lazy val cmark =
     .settings(
       publish / skip := true,
       publishLocal / skip := true,
-      scalaVersion := Versions.Scala3_LTS,
+      scalaVersion := Versions.Scala,
       vcpkgDependencies := VcpkgDependencies("cmark"),
       vcpkgNativeConfig ~= { _.addRenamedLibrary("cmark", "libcmark") },
       bindgenBindings += {
@@ -262,7 +262,7 @@ lazy val cairo =
     .settings(
       publish / skip := true,
       publishLocal / skip := true,
-      scalaVersion := Versions.Scala3_LTS,
+      scalaVersion := Versions.Scala,
       vcpkgDependencies := VcpkgDependencies("cairo"),
       bindgenBindings += {
         Binding(baseDirectory.value / "amalgam.h", "cairo")
@@ -282,7 +282,7 @@ lazy val treesitterBindings =
     .enablePlugins(ScalaNativePlugin, BindgenPlugin, VcpkgNativePlugin)
     .settings(
       moduleName := "treesitter-bindings",
-      scalaVersion := Versions.Scala3_LTS,
+      scalaVersion := Versions.Scala,
       vcpkgDependencies := VcpkgDependencies("tree-sitter"),
       bindgenBindings += {
         Binding(
@@ -537,7 +537,7 @@ def writeBinary(
   val dest =
     destinationDir / name
 
-  IO.copyFile(source, dest)
+  IO.copyFile(source, dest, CopyOptions.apply(true, true, true))
 
   log.info(s"Binary [$name] built in ${dest}")
 
