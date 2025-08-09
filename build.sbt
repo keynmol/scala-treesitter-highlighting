@@ -36,8 +36,8 @@ inThisBuild(
 
 val Versions =
   new {
-    val Scala3_LTS = "3.3.4"
-    val Scala3_Next = "3.6.2"
+    val Scala3_LTS = "3.3.6"
+    val Scala3_Next = "3.7.2"
     val Laminar = "17.2.0"
     val Munit = "1.0.3"
   }
@@ -79,6 +79,19 @@ lazy val treesitterInterface =
       Seq(Versions.Scala3_LTS),
       Seq.empty,
       _.enablePlugins(VcpkgNativePlugin)
+    )
+    .jvmPlatform(
+      Seq(Versions.Scala3_LTS),
+      Seq.empty,
+      proj =>
+        proj.settings(
+          libraryDependencies += "io.github.tree-sitter" % "jtreesitter" % "0.25.4",
+          Test / envVars += "TREESITTER_SCALA_DYLIB" -> (buildScalaGrammar.value._2.toString),
+          Test / envVars += "TREESITTER_DYLIB" -> buildTreeSitterLib.value._2.toString,
+          // Test / javaOptions += "-verbose:class",
+          Test / fork := true,
+          run / fork := true
+        )
     )
     .settings(moduleName := "treesitter-interface")
     .settings(
@@ -376,8 +389,11 @@ ThisBuild / buildPlatformBinary := {
   )
 }
 
+lazy val buildTreeSitterLib =
+  taskKey[(File, File)]("")
+
 lazy val buildScalaGrammar =
-  taskKey[File]("")
+  taskKey[(File, File)]("")
 
 Global / buildScalaGrammar := {
   val tg =
@@ -399,10 +415,41 @@ Global / buildScalaGrammar := {
     FileFunction.cached(
       s.cacheDirectory / "tree-sitter-scala-build"
     ) { (in: Set[File]) =>
-      Set(buildScalaGrammarImpl(files, tg, s.log))
+      buildScalaGrammarImpl(files, tg, s.log).toSet
     }
-  cachedFun(files.toSet).headOption
-    .getOrElse(sys.error("No static library produced"))
+  val static :: dynamic :: Nil = cachedFun(files.toSet).toList
+
+  (static, dynamic)
+
+}
+
+Global / buildTreeSitterLib := {
+  val tg =
+    crossTarget.value / "tree-sitter-scala-build"
+  val src =
+    (baseDirectory.value) / "tree-sitter"
+  val cSources =
+    src.toGlob / ** / "*.c"
+  val hSources =
+    src.toGlob / ** / "*.h"
+  val s =
+    streams.value
+
+  val files =
+    (fileTreeView.value.list(cSources) ++ fileTreeView.value.list(hSources))
+      .map(_._1.toFile)
+
+  val cachedFun =
+    FileFunction.cached(
+      s.cacheDirectory / "tree-sitter-build"
+    ) { (in: Set[File]) =>
+      buildTreeSitterLibImpl(files, src, s.log).toSet
+    }
+  cachedFun(files.toSet).headOption.get
+
+  val static :: dynamic :: Nil = cachedFun(files.toSet).toList
+
+  (static, dynamic)
 }
 
 lazy val buildScalaWASM =
@@ -439,30 +486,29 @@ def buildScalaWASMImpl(dest: File, cwd: File, log: sbt.Logger): File = {
   dest
 }
 
-Global / buildScalaGrammar := {
-  val tg =
-    crossTarget.value / "tree-sitter-scala-build"
-  val src =
-    (baseDirectory.value) / "tree-sitter-scala" / "src"
-  val cSources =
-    src.toGlob / ** / "*.c"
-  val hSources =
-    src.toGlob / ** / "*.h"
-  val s =
-    streams.value
+def buildTreeSitterLibImpl(
+    files: Seq[File],
+    src: File,
+    log: sbt.Logger
+) = {
+  val outStatic =
+    src / "libtree-sitter.a"
 
-  val files =
-    (fileTreeView.value.list(cSources) ++ fileTreeView.value.list(hSources))
-      .map(_._1.toFile)
+  val outDynamic =
+    src / (if (Platform.os == MacOS) "libtree-sitter.dylib"
+              else "libtree-sitter.so")
+  import scala.sys.process.*
 
-  val cachedFun =
-    FileFunction.cached(
-      s.cacheDirectory / "tree-sitter-scala-build"
-    ) { (in: Set[File]) =>
-      Set(buildScalaGrammarImpl(files, tg, s.log))
-    }
-  cachedFun(files.toSet).headOption
-    .getOrElse(sys.error("No static library produced"))
+  val compileToObjectFiles =
+    List.newBuilder[String]
+  compileToObjectFiles += "make"
+
+  Process(
+    command = compileToObjectFiles.result(),
+    cwd = src
+  ).!(log)
+
+  List(outStatic, outDynamic)
 }
 
 def buildScalaGrammarImpl(
@@ -470,45 +516,60 @@ def buildScalaGrammarImpl(
     outDir: File,
     log: sbt.Logger
 ) = {
-  val out =
-    outDir / "libtree-sitter.a"
+  val outStatic =
+    outDir / "libtree-sitter-scala.a"
+  val outDynamic =
+    outDir / (if (Platform.os == MacOS) "libtree-sitter-scala.dylib"
+              else "libtree-sitter-scala.so")
   val stage =
     outDir / "stage"
   IO.delete(stage)
   import scala.sys.process.*
   try {
-    val cmd =
+    val compileToObjectFiles =
       List.newBuilder[String]
-    cmd += "clang"
-    cmd ++= files.toSeq.map(_.toString)
-    cmd += "-fPIC"
-    cmd += "-c"
+    compileToObjectFiles += "clang"
+    compileToObjectFiles ++= files.toSeq.map(_.toString)
+    compileToObjectFiles += "-fPIC"
+    compileToObjectFiles += "-c"
 
     IO.createDirectory(stage)
     Process(
-      command = cmd.result(),
+      command = compileToObjectFiles.result(),
       cwd = stage
     ).!(log)
 
     val objectFiles =
-      stage.toGlob / ** / "*.o"
+      FileTreeView.nio
+        .list(stage.toGlob / ** / "*.o")
+        .map(_._1.toAbsolutePath.toString())
 
-    val arCmd =
+    val createStaticLibrary =
       List.newBuilder[String]
-    arCmd += "ar"
-    arCmd += "r"
-    arCmd += out.name
+    createStaticLibrary += "ar"
+    createStaticLibrary += "r"
+    createStaticLibrary += outStatic.name
+    createStaticLibrary ++= objectFiles
 
-    arCmd ++= FileTreeView.nio
-      .list(objectFiles)
-      .map(_._1.toAbsolutePath.toString())
+    val createSharedLibrary =
+      List.newBuilder[String]
+    createSharedLibrary += "clang"
+    createSharedLibrary += "-shared"
+    createSharedLibrary += "-o"
+    createSharedLibrary += outDynamic.name
+    createSharedLibrary ++= objectFiles
 
     Process(
-      arCmd.result(),
+      createStaticLibrary.result(),
       cwd = outDir
     ).!(log)
 
-    out
+    Process(
+      createSharedLibrary.result(),
+      cwd = outDir
+    ).!(log)
+
+    List(outStatic, outDynamic)
   } finally {
     IO.delete(stage)
   }
