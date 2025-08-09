@@ -1,3 +1,6 @@
+import java.nio.file.StandardCopyOption
+import java.nio.file.CopyOption
+import java.nio.file.Files
 import scala.scalanative.build.SourceLevelDebuggingConfig
 import scala.scalanative.build.LTO
 import org.scalajs.linker.interface.ModuleSplitStyle
@@ -537,7 +540,12 @@ def writeBinary(
   val dest =
     destinationDir / name
 
-  IO.copyFile(source, dest, CopyOptions.apply(true, true, true))
+  Files.copy(
+    source.toPath(),
+    dest.toPath(),
+    StandardCopyOption.COPY_ATTRIBUTES,
+    StandardCopyOption.REPLACE_EXISTING,
+  )
 
   log.info(s"Binary [$name] built in ${dest}")
 
