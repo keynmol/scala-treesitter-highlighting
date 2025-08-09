@@ -97,7 +97,7 @@ def generate_image(
   cairo_set_source_surface(newCairo, surface, 0, 0)
 
   cairo_paint(newCairo)
-  
+
   Zone:
     cairo_surface_write_to_png(newSurface, toCString(out))
 
@@ -200,6 +200,7 @@ def size_text(
       )
       lineWidth += ((!extents).width).max((!baseExtents).width * text.length)
     else lineWidth += text.count(_.isWhitespace) * (!baseExtents).width
+    end if
   end handleToken
 
   extension (d: String)
@@ -219,6 +220,7 @@ def size_text(
       if sb.length > 0 then segments += sb.result
 
       segments.result
+  end extension
 
   Zone:
     tokens.foreach: token =>

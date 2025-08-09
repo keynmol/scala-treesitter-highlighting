@@ -35,18 +35,21 @@ object Theme:
   def apply(f: PartialFunction[CaptureGroup | Container, Style]): Theme =
     new Theme:
       // export f.{apply, isDefinedAt}
-      override def apply(v1: CaptureGroup | Container): Style = if isDefinedAt(v1) then f(v1) else sys.error(s"Match error! $v1")
-      override def isDefinedAt(x: CaptureGroup | Container): Boolean = f.isDefinedAt(x)
+      override def apply(v1: CaptureGroup | Container): Style =
+        if isDefinedAt(v1) then f(v1) else sys.error(s"Match error! $v1")
+      override def isDefinedAt(x: CaptureGroup | Container): Boolean =
+        f.isDefinedAt(x)
 
   opaque type Container = Unit
   val Container: Container = ()
 
   def fromString(s: String): Option[Theme] = s.trim.toLowerCase() match
-    case "kanagawa"     => Some(Kanagawa)
-    case "gruvbox"      => Some(Gruvbox)
-    case "vscode"       => Some(VSCode)
-    case "vscode-light" => Some(LightVSCode)
-    case _              => Option.empty
+    case "kanagawa"        => Some(Kanagawa)
+    case "gruvbox"         => Some(Gruvbox)
+    case "vscode"          => Some(VSCode)
+    case "vscode-light"    => Some(LightVSCode)
+    case "solarized-light" => Some(SolarizedLight)
+    case _                 => Option.empty
 
   import CaptureGroup.*
 
@@ -77,6 +80,34 @@ object Theme:
     case Method                    => rgb"121,94,38".text
     case Boolean                   => rgb"9,134,88".text
     case TypeDefinition            => rgb"38,127,153".text
+
+  val SolarizedLight: Theme = apply:
+    case Container =>
+      rgb"253,246,227".background.copy(text = Some(rgb"101,123,131"))
+    case Function => rgb"88,110,117".text
+    case Keyword | KeywordFunction | Repeat | Conditional | KeywordOperator |
+        KeywordReturn =>
+      rgb"133,153,0".text
+    case Storageclass =>
+      rgb"133,153,0".text.underline
+    case TypeQualifier =>
+      rgb"133,153,0".text.underline
+    case PunctuationBracket | PunctuationDelimiter | PunctuationSpecial =>
+      rgb"101,123,131".text
+    case Type                      => rgb"38,139,210".text
+    case String                    => rgb"42,161,152".text
+    case FunctionCall | MethodCall => rgb"88,110,117".text
+    case Number | Float            => rgb"203,75,22".text
+    case Operator                  => rgb"101,123,131".text
+    case Parameter                 => rgb"88,110,117".text
+    case Include                   => rgb"211,54,130".text
+    case Namespace                 => rgb"38,139,210".text
+    case Property                  => rgb"88,110,117".text
+    case Spell                     => rgb"147,161,161".text
+    case Variable                  => rgb"88,110,117".text
+    case Method                    => rgb"88,110,117".text
+    case Boolean                   => rgb"203,75,22".text
+    case TypeDefinition            => rgb"38,139,210".text
 
   val VSCode: Theme = apply:
     case Container =>
