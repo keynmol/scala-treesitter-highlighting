@@ -6,6 +6,8 @@ class HighlightTokenizerTest extends munit.FunSuite:
       val highlight =
         HighlightTokenizer(CODE, Bootstrap.QUERIES, ts).switches.toVector
 
+      println(highlight)
+
 end HighlightTokenizerTest
 
 val CODE = """

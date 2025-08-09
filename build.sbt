@@ -88,7 +88,6 @@ lazy val treesitterInterface =
           libraryDependencies += "io.github.tree-sitter" % "jtreesitter" % "0.25.4",
           Test / envVars += "TREESITTER_SCALA_DYLIB" -> (buildScalaGrammar.value._2.toString),
           Test / envVars += "TREESITTER_DYLIB" -> buildTreeSitterLib.value._2.toString,
-          // Test / javaOptions += "-verbose:class",
           Test / fork := true,
           run / fork := true
         )
@@ -99,7 +98,7 @@ lazy val treesitterInterface =
       vcpkgDependencies := VcpkgDependencies("tree-sitter"),
       Test / nativeConfig :=
         nativeConfig.value
-          .withLinkingOptions(_ :+ buildScalaGrammar.value.toString)
+          .withLinkingOptions(_ :+ buildScalaGrammar.value._1.toString)
           .withEmbedResources(true)
           .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
           // .withResourceIncludePatterns(Seq("**.scm"))
