@@ -1,13 +1,13 @@
-import scala.scalanative.build.SourceLevelDebuggingConfig
-import scala.scalanative.build.LTO
-import org.scalajs.linker.interface.ModuleSplitStyle
-import sbt.nio.file.FileTreeView
-import com.indoorvivants.detective.Platform
-import bindgen.plugin.BindgenMode
-import com.indoorvivants.detective.Platform.OS.*
-import com.indoorvivants.detective.Platform
 import bindgen.interface.Binding
 import bindgen.interface.LogLevel
+import bindgen.plugin.BindgenMode
+import com.indoorvivants.detective.Platform
+import com.indoorvivants.detective.Platform.OS.`*`
+import org.scalajs.linker.interface.ModuleSplitStyle
+import sbt.nio.file.FileTreeView
+
+import scala.scalanative.build.LTO
+import scala.scalanative.build.SourceLevelDebuggingConfig
 
 lazy val BINARY_NAME = "scala-highlight"
 
@@ -495,7 +495,7 @@ def buildTreeSitterLibImpl(
 
   val outDynamic =
     src / (if (Platform.os == MacOS) "libtree-sitter.dylib"
-              else "libtree-sitter.so")
+           else "libtree-sitter.so")
   import scala.sys.process.*
 
   val compileToObjectFiles =
