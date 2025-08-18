@@ -1,12 +1,17 @@
 import bindgen.interface.Binding
 import bindgen.interface.LogLevel
 import bindgen.plugin.BindgenMode
-import com.indoorvivants.detective.Platform, Platform.OS._
+import com.indoorvivants.detective.Platform, Platform.OS.*
 import org.scalajs.linker.interface.ModuleSplitStyle
 import sbt.nio.file.FileTreeView
+import java.nio.file.StandardCopyOption
+import java.nio.file.CopyOption
+import java.nio.file.Files
 
 import scala.scalanative.build.LTO
 import scala.scalanative.build.SourceLevelDebuggingConfig
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val BINARY_NAME = "scala-highlight"
 
@@ -45,7 +50,7 @@ lazy val root =
   project
     .in(file("."))
     .aggregate(webapp)
-    .aggregate(treesitterInterface.projectRefs *)
+    .aggregate(treesitterInterface.projectRefs*)
     .aggregate(treesitterBindings)
     .aggregate(cmark)
     .aggregate(lib, bin)
@@ -205,11 +210,12 @@ lazy val bin =
       publish / skip := true,
       publishLocal / skip := true,
       scalaVersion := Versions.Scala3_Next,
-      libraryDependencies += "com.lihaoyi" %%% "mainargs" % "0.7.6",
+      libraryDependencies += "com.indoorvivants" %%% "decline-derive" % "0.3.1",
+      libraryDependencies += "com.indoorvivants" %%% "mcp" % "0.0.8",
       vcpkgDependencies := VcpkgDependencies("tree-sitter", "cmark", "cairo"),
       nativeConfig :=
         nativeConfig.value
-          .withLinkingOptions(_ :+ buildScalaGrammar.value.toString)
+          .withLinkingOptions(_ :+ buildScalaGrammar.value._1.toString)
           .withEmbedResources(true)
           .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
           .withResourceIncludePatterns(Seq("**.scm", "**.ttf"))
@@ -315,6 +321,32 @@ lazy val treesitterBindings =
     )
     .settings(bindgenSettings)
     .settings(configurePlatform())
+
+lazy val httpServer =
+  project
+    .in(file("mod/http-server"))
+    .dependsOn(httpShared.jvm(true))
+    .settings(
+      libraryDependencies += "org.http4s" %% "http4s-ember-server" % "0.23.30",
+      libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.30",
+      libraryDependencies += "com.outr" %% "scribe-cats" % "3.15.2",
+      libraryDependencies += "co.fs2" %% "fs2-io" % "3.12.0",
+      run / fork := true,
+      run / envVars += "HIGHLIGHTER_CLI_PATH" -> (bin / Compile / nativeLink).value.toString,
+      reStart / envVars += "HIGHLIGHTER_CLI_PATH" -> (bin / Compile / nativeLink).value.toString,
+      scalaVersion := Versions.Scala3_Next
+    )
+
+lazy val httpShared =
+  projectMatrix
+    .jsPlatform(Seq(Versions.Scala3_Next))
+    .jvmPlatform(
+      Seq(Versions.Scala3_Next)
+    )
+    .in(file("mod/http-shared"))
+    .settings(
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % "4.2.1"
+    )
 
 val bindgenSettings =
   Seq(
@@ -596,7 +628,12 @@ def writeBinary(
   val dest =
     destinationDir / name
 
-  IO.copyFile(source, dest)
+  Files.copy(
+    source.toPath(),
+    dest.toPath(),
+    StandardCopyOption.COPY_ATTRIBUTES,
+    StandardCopyOption.REPLACE_EXISTING
+  )
 
   log.info(s"Binary [$name] built in ${dest}")
 
