@@ -1,8 +1,7 @@
 import bindgen.interface.Binding
 import bindgen.interface.LogLevel
 import bindgen.plugin.BindgenMode
-import com.indoorvivants.detective.Platform
-import com.indoorvivants.detective.Platform.OS.`*`
+import com.indoorvivants.detective.Platform, Platform.OS._
 import org.scalajs.linker.interface.ModuleSplitStyle
 import sbt.nio.file.FileTreeView
 
