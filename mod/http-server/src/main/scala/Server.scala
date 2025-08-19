@@ -6,8 +6,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import org.http4s.HttpRoutes
 import org.http4s.ember.server.EmberServerBuilder
-import com.comcast.ip4s.host
-import com.comcast.ip4s.port
+import com.comcast.ip4s.*
 import scribe.cats.io as Log
 import cats.data.Kleisli
 import fs2.io as FIO
@@ -40,7 +39,7 @@ end Config
 object HighlighterApp extends ResourceApp.Forever:
   def routes(config: Config) =
     HttpRoutes.of[IO]:
-      case request @ PUT -> Root / "persist" =>
+      case request @ PUT -> Root / "api" / "persist" =>
         val id = 25
         request
           .as[String]
@@ -90,7 +89,12 @@ object HighlighterApp extends ResourceApp.Forever:
       EmberServerBuilder
         .default[IO]
         .withHost(host"0.0.0.0")
-        .withPort(port"9977")
+        .withPort(
+          args.headOption
+            .flatMap(_.toIntOption)
+            .flatMap(Port.fromInt)
+            .getOrElse(port"8080")
+        )
         .withHttpApp(
           routes(config).orNotFound.handleErrorWith(err =>
             Kleisli(req =>

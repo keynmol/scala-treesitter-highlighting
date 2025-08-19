@@ -213,11 +213,12 @@ lazy val bin =
       libraryDependencies += "com.indoorvivants" %%% "decline-derive" % "0.3.1",
       libraryDependencies += "com.indoorvivants" %%% "mcp" % "0.0.8",
       vcpkgDependencies := VcpkgDependencies("tree-sitter", "cmark", "cairo"),
+      vcpkgNativeConfig ~= { _.addRenamedLibrary("cmark", "libcmark") },
       nativeConfig :=
         nativeConfig.value
           .withLinkingOptions(_ :+ buildScalaGrammar.value._1.toString)
           .withEmbedResources(true)
-          .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
+          // .withLTO(if (Platform.os != Platform.OS.MacOS) LTO.thin else LTO.none)
           .withResourceIncludePatterns(Seq("**.scm", "**.ttf"))
           .withIncrementalCompilation(true)
           .withSourceLevelDebuggingConfig(SourceLevelDebuggingConfig.enabled),
@@ -326,6 +327,7 @@ lazy val httpServer =
   project
     .in(file("mod/http-server"))
     .dependsOn(httpShared.jvm(true))
+    .enablePlugins(JavaAppPackaging)
     .settings(
       libraryDependencies += "org.http4s" %% "http4s-ember-server" % "0.23.30",
       libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.30",
@@ -368,7 +370,7 @@ def configurePlatform(
         nativeConfig.value
       val arch64 =
         if (
-          Platform.arch == Platform.Arch.Arm && Platform.bits == Platform.Bits.x64
+          Platform.os == MacOS && Platform.arch == Platform.Arch.Arm && Platform.bits == Platform.Bits.x64
         )
           List("-arch", "arm64")
         else Nil
@@ -627,6 +629,8 @@ def writeBinary(
 
   val dest =
     destinationDir / name
+
+  IO.createDirectory(destinationDir)
 
   Files.copy(
     source.toPath(),

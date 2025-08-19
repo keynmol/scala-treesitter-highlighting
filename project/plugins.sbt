@@ -21,4 +21,6 @@ addSbtPlugin("com.indoorvivants" % "bindgen-sbt-plugin" % "0.2.4")
 
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
 
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.1")
+
 libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2"
