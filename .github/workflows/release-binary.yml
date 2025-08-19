@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: ["*"]
 
-
 jobs:
   macos_build:
     name: MacOS (${{ matrix.OS }})
@@ -23,8 +22,8 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin' 
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
 
       - uses: sbt/setup-sbt@v1
 
@@ -39,7 +38,7 @@ jobs:
 
       - uses: rui314/setup-mold@v1
 
-      - run: brew install llvm@17 ninja autoconf
+      - run: brew install llvm@17 ninja autoconf automake
 
       - name: Build the binary
         run: sbt buildPlatformBinary
@@ -54,11 +53,10 @@ jobs:
       - run: ~/Library/Caches/sbt-vcpkg/vcpkg/buildtrees/**/*-err.log
         if: failure()
 
-
   linux_build:
-      name: Linux
-      runs-on: ubuntu-20.04
-      steps:
+    name: Linux
+    runs-on: ubuntu-20.04
+    steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -66,8 +64,8 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin' 
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
           cache: sbt
 
       - name: Cache vcpkg
@@ -100,19 +98,19 @@ jobs:
   #     LLVM_BIN: 'C:\Program Files\LLVM\bin'
   #     LLVM_VERSION: "17.0.6"
   #   steps:
-  #     # This step is important to make sure scalafmt 
+  #     # This step is important to make sure scalafmt
   #     # checks don't fail
   #     - name: Setup git config
   #       run: git config --global core.autocrlf false
 
   #     - uses: actions/checkout@v4
   #       with:
-  #         fetch-depth: 0 
+  #         fetch-depth: 0
   #         submodules: true
 
   #     - uses: actions/setup-java@v4
   #       with:
-  #         distribution: 'temurin' 
+  #         distribution: 'temurin'
   #         java-version: '21'
   #         cache: sbt
 
@@ -156,7 +154,7 @@ jobs:
         run: echo "It's a sad existence but necessary"
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v') 
+    if: startsWith(github.ref, 'refs/tags/v')
     # needs: [linux_build, windows_build, macos_build]
     needs: [linux_build, macos_build]
     name: Upload binaries to release
@@ -164,7 +162,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
           submodules: true
 
       - name: Download binaries

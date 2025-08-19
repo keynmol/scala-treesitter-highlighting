@@ -1,0 +1,12 @@
+*.class
+.vscode
+.sbt
+.metals
+.bsp
+.bloop
+out
+target
+node_modules
+*.wasm
+dist
+Dockerfile
