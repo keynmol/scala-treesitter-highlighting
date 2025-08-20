@@ -1,23 +1,17 @@
-import TreeSitter from 'web-tree-sitter';
-import init from 'web-tree-sitter/tree-sitter.wasm?init&url';
-import initScala from '/tree-sitter-scala.wasm?init&url';
-
-const Parser = TreeSitter;
+import TreeSitter from "web-tree-sitter";
+import init from "web-tree-sitter/tree-sitter.wasm?init&url";
+import initScala from "/tree-sitter-scala.wasm?init&url";
 
 let parser = await (async () => {
-  await Parser.init({
+  await TreeSitter.init({
     locateFile(scriptName, scriptDirectory) {
-      return init
-      // if (import.meta.env.MODE == 'development') 
-      //   return 'node_modules/web-tree-sitter/' + scriptName;
-      // else return 'assets!/' + scriptName;
+      return init;
     },
-  });  
-  const parser = new Parser();
-  const Lang = await Parser.Language.load(initScala);
+  });
+  const parser = new TreeSitter();
+  const Lang = await TreeSitter.Language.load(initScala);
   parser.setLanguage(Lang);
   return parser;
 })();
 
 export default parser;
-

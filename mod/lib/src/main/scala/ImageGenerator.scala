@@ -67,6 +67,8 @@ def generate_image(
 
   val summary = size_text(cairo, contents, tokens, 20f, theme)
 
+  println(summary)
+
   Zone:
     summary.tokens.foreach: token =>
       cairo.setColor(token.color)
@@ -84,7 +86,6 @@ def generate_image(
     )
 
   val newCairo = cairo_create(newSurface)
-
   newCairo.setColor(rgb"#000000", 0.0)
   cairo_rectangle(newCairo, 0, 0, width, height)
   cairo_fill(newCairo)
@@ -97,7 +98,7 @@ def generate_image(
   cairo_set_source_surface(newCairo, surface, 0, 0)
 
   cairo_paint(newCairo)
-  
+
   Zone:
     cairo_surface_write_to_png(newSurface, toCString(out))
 
@@ -125,7 +126,7 @@ def rounded_rectangle(
   val radius = corner_radius / aspect
   val degrees = Math.PI / 180.0
 
-  cairo_new_sub_path(cr);
+  cairo_new_sub_path(cr)
   cairo_arc(
     cr,
     x + width - radius,
@@ -133,7 +134,7 @@ def rounded_rectangle(
     radius,
     -90 * degrees,
     0 * degrees
-  );
+  )
   cairo_arc(
     cr,
     x + width - radius,
@@ -141,7 +142,7 @@ def rounded_rectangle(
     radius,
     0 * degrees,
     90 * degrees
-  );
+  )
   cairo_arc(
     cr,
     x + radius,
@@ -149,9 +150,9 @@ def rounded_rectangle(
     radius,
     90 * degrees,
     180 * degrees
-  );
-  cairo_arc(cr, x + radius, y + radius, radius, 180 * degrees, 270 * degrees);
-  cairo_close_path(cr);
+  )
+  cairo_arc(cr, x + radius, y + radius, radius, 180 * degrees, 270 * degrees)
+  cairo_close_path(cr)
 
   // cairo_set_source_rgb(cr, 0.5, 0.5, 1);
   color.foreach: color =>
@@ -200,6 +201,7 @@ def size_text(
       )
       lineWidth += ((!extents).width).max((!baseExtents).width * text.length)
     else lineWidth += text.count(_.isWhitespace) * (!baseExtents).width
+    end if
   end handleToken
 
   extension (d: String)
@@ -219,6 +221,7 @@ def size_text(
       if sb.length > 0 then segments += sb.result
 
       segments.result
+  end extension
 
   Zone:
     tokens.foreach: token =>
@@ -237,5 +240,5 @@ def size_text(
           case other =>
             handleToken(other, color)
 
-    Summary(width, height, positionedTokens.result())
+    Summary(width.max(lineWidth), height, positionedTokens.result())
 end size_text

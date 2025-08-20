@@ -9,7 +9,7 @@ object Bootstrap:
       val parser = tree_sitter.all.ts_parser_new()
       val lang = tree_sitter_scala()
 
-      val ts = TreeSitter(parser, lang)
+      val ts: TreeSitterInterface = TreeSitter(parser, lang)
       f(ts)
 
   lazy val QUERIES = io.Source
@@ -18,4 +18,5 @@ object Bootstrap:
     .mkString(System.lineSeparator())
 end Bootstrap
 
+@extern
 def tree_sitter_scala(): Ptr[TSLanguage] = extern

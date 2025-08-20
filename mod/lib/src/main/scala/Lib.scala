@@ -79,12 +79,17 @@ def highlight_markdown_file(
                 tok.kind.foreach: k =>
                   CaptureGroup.fromString(k).foreach(mentionedGroups += _)
 
-                builder.addAll(
-                  s"<span class='${tok.kind.map(k => "ts-hl-" + k.replace('.', '-')).getOrElse("")}'>${code
-                      .slice(tok.start, tok.finish)}</span>"
-                )
+                val codeSpan = code.slice(tok.start, tok.finish)
 
-              builder.addAll(s"</pre></code>\n\n")
+                tok.kind match
+                  case None =>
+                    builder.addAll(codeSpan)
+                  case Some(value) =>
+                    builder.addAll(
+                      s"<span class='ts-hl-${value.replace('.', '-')}'>$codeSpan</span>"
+                    )
+
+              builder.addAll(s"</code></pre>\n\n")
 
               cuts.addOne(
                 lineStart,
