@@ -12,18 +12,6 @@ import ts_highlight.themes.Theme
 import ts_highlight.themes.CaptureGroup
 import com.raquo.airstream.web.WebStorageVar
 
-@js.native @JSImport("/tree-sitter-scala.wasm?init&url", JSImport.Default)
-val imgUrl: String = js.native
-
-@js.native @JSImport("/highlights.scm?raw", JSImport.Default)
-val highlightQueries: String = js.native
-
-@js.native @JSImport(
-  "web-tree-sitter/tree-sitter.wasm?init&url",
-  JSImport.Default
-)
-val wasmInit: String = js.native
-
 def show(n: Parser.Node) =
   import n.*
   s"Node[${startPosition.row},${startPosition.column} -> ${endPosition.row},${endPosition.column}]"

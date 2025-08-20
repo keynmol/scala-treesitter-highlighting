@@ -333,6 +333,7 @@ lazy val httpServer =
       libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.30",
       libraryDependencies += "com.outr" %% "scribe-cats" % "3.15.2",
       libraryDependencies += "co.fs2" %% "fs2-io" % "3.12.0",
+      libraryDependencies += "software.amazon.awssdk" % "s3" % "2.20.30",
       run / fork := true,
       run / envVars += "HIGHLIGHTER_CLI_PATH" -> (bin / Compile / nativeLink).value.toString,
       reStart / envVars += "HIGHLIGHTER_CLI_PATH" -> (bin / Compile / nativeLink).value.toString,

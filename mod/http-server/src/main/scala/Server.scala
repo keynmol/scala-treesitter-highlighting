@@ -36,6 +36,10 @@ object Config:
       .mapN(Config.apply)
 end Config
 
+object S3:
+  val client = 
+    import software.amazon.awssdk.services.s3.*
+
 object HighlighterApp extends ResourceApp.Forever:
   def routes(config: Config) =
     HttpRoutes.of[IO]:

@@ -10,3 +10,5 @@ node_modules
 *.wasm
 dist
 Dockerfile
+project/target
+project/project

@@ -86,7 +86,6 @@ def generate_image(
     )
 
   val newCairo = cairo_create(newSurface)
-
   newCairo.setColor(rgb"#000000", 0.0)
   cairo_rectangle(newCairo, 0, 0, width, height)
   cairo_fill(newCairo)
